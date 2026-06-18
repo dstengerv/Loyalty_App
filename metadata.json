@@ -1,0 +1,6 @@
+{
+  "name": "Buttery Loyalty",
+  "description": "Programa de lealtad para Buttery en Polanco, CDMX. Tarjeta de sellos para registrar tus visitas y ganar premios de cortesía.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
