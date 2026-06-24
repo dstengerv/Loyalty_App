@@ -25,12 +25,14 @@ export default function QRCameraScanner({
   const [useCamera, setUseCamera] = useState<boolean>(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const isProcessingRef = useRef<boolean>(false);
   const [scanFeedback, setScanFeedback] = useState<string | null>(null);
 
   // Initialize camera scanner if requested
   useEffect(() => {
     if (useCamera) {
       setCameraError(null);
+      isProcessingRef.current = false;
       // Wait for DOM node to be ready
       const timer = setTimeout(() => {
         try {
@@ -45,6 +47,9 @@ export default function QRCameraScanner({
               aspectRatio: 1.0,
             },
             (decodedText) => {
+              if (isProcessingRef.current) return;
+              isProcessingRef.current = true;
+
               // Beep sound effect simulated via audio if possible or visual
               setScanFeedback("¡Código escaneado con éxito!");
               setTimeout(() => {
