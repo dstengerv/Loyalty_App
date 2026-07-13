@@ -885,7 +885,7 @@ export default function App() {
         <div 
           id="pwa-screen"
           className={`w-full bg-brand-bg overflow-hidden flex flex-col min-h-screen ${
-            currentUser?.role === 'client' ? 'md:max-w-sm md:min-h-screen md:shadow-2xl' : ''
+            currentUser?.role === 'client' ? 'md:max-w-sm md:mx-auto md:shadow-2xl' : ''
           }`}
           style={{
             '--color-brand-brown': brandBrown,
