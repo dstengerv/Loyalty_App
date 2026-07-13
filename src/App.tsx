@@ -350,7 +350,7 @@ export default function App() {
     if (successToast) {
       const timer = setTimeout(() => {
         setSuccessToast(null);
-      }, 4500);
+      }, 2500);
       return () => clearTimeout(timer);
     }
   }, [successToast]);
@@ -857,24 +857,25 @@ export default function App() {
       
       {/* Toast Notification message */}
       {successToast && (
-        <div 
-          id="success-toast" 
-          className={`fixed top-6 right-6 z-50 max-w-sm p-4 rounded-2xl flex items-center gap-3 shadow-xl border animate-fadeIn ${
-            successToast.type === 'error' 
-              ? 'bg-rose-50 border-rose-200 text-rose-900' 
-              : successToast.type === 'info' 
-                ? 'bg-blue-50 border-blue-200 text-blue-900' 
-                : 'bg-stone-900 border-white/15 text-white'
+        <div
+          id="success-toast"
+          style={{ animation: 'slideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
+          className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-5 py-3.5 rounded-2xl flex items-center gap-3 shadow-2xl border whitespace-nowrap ${
+            successToast.type === 'error'
+              ? 'bg-rose-600 border-rose-500/30 text-white'
+              : successToast.type === 'info'
+                ? 'bg-[#2D241E] border-white/10 text-white'
+                : 'bg-[#2F4A3A] border-white/10 text-white'
           }`}
         >
           {successToast.type === 'error' ? (
-            <AlertCircle className="w-5 h-5 text-rose-500 flex-shrink-0" />
+            <AlertCircle className="w-4 h-4 text-white/80 flex-shrink-0" />
           ) : successToast.type === 'info' ? (
-            <Info className="w-5 h-5 text-blue-500 flex-shrink-0" />
+            <Info className="w-4 h-4 text-[#C5A059] flex-shrink-0" />
           ) : (
-            <CheckCircle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+            <CheckCircle className="w-4 h-4 text-[#C5A059] flex-shrink-0" />
           )}
-          <span className="font-sans text-xs font-semibold">{successToast.message}</span>
+          <span className="font-sans text-xs font-semibold tracking-wide">{successToast.message}</span>
         </div>
       )}
 

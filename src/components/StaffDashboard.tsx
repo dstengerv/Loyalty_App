@@ -17,7 +17,8 @@ import {
   Coffee,
   Gift,
   Settings,
-  Lock
+  Lock,
+  AlertCircle
 } from 'lucide-react';
 import { User as UserType, Transaction, RewardItem, QRVoucher } from '../types';
 
@@ -177,7 +178,7 @@ export default function StaffDashboard({
     setPointsToAward('1'); // reset to default 1 stamp
     setCustomDescription('');
 
-    setTimeout(() => setFeedbackMsg(null), 4000);
+    setTimeout(() => setFeedbackMsg(null), 2500);
   };
 
   // Only get transactions processed in the latest feeds or globally
@@ -486,21 +487,20 @@ export default function StaffDashboard({
       </div>
 
       {feedbackMsg && (
-        <div className={`mx-6 mt-4 p-4 rounded-xl text-brand-brown flex items-start gap-2.5 animate-fadeIn border ${
-          feedbackMsg.isError 
-            ? 'bg-rose-50 border-rose-200' 
-            : 'bg-white border-brand-gold/30'
-        }`}>
-          <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white flex-shrink-0 mt-0.5 ${
-            feedbackMsg.isError ? 'bg-rose-500' : 'bg-brand-gold'
-          }`}>
-            {feedbackMsg.isError ? (
-              <span className="text-[11px] font-sans font-extrabold leading-none">!</span>
-            ) : (
-              <Check className="w-3.5 h-3.5" />
-            )}
-          </div>
-          <p className="font-serif italic text-xs leading-relaxed">{feedbackMsg.text}</p>
+        <div
+          style={{ animation: 'slideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
+          className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-5 py-3.5 rounded-2xl flex items-center gap-3 shadow-2xl border whitespace-nowrap ${
+            feedbackMsg.isError
+              ? 'bg-rose-600 border-rose-500/30 text-white'
+              : 'bg-[#2F4A3A] border-white/10 text-white'
+          }`}
+        >
+          {feedbackMsg.isError ? (
+            <AlertCircle className="w-4 h-4 text-white/80 flex-shrink-0" />
+          ) : (
+            <Check className="w-4 h-4 text-[#C5A059] flex-shrink-0" />
+          )}
+          <span className="font-sans text-xs font-semibold tracking-wide">{feedbackMsg.text}</span>
         </div>
       )}
 
@@ -1347,7 +1347,7 @@ export default function StaffDashboard({
                   onUpdateSettings(tempStamp, tempBrown, tempGold, tempBg, tempPin, tempLogoUrl, tempLogoHeight, tempCardBgUrl);
                   setIsSettingsOpen(false);
                   setFeedbackMsg({ text: '¡Configuración de marca actualizada de manera segura!', isError: false });
-                  setTimeout(() => setFeedbackMsg(null), 3500);
+                  setTimeout(() => setFeedbackMsg(null), 2500);
                 }}
                 className={`flex-1 py-3 text-white rounded-xl font-sans text-[10px] font-bold uppercase tracking-widest transition-colors cursor-pointer text-center ${
                   tempPin.length !== 4
