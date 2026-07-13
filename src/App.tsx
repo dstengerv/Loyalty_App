@@ -949,12 +949,22 @@ export default function App() {
 
                 {/* Logo + location */}
                 <div className="relative z-10 px-8 pt-10 pb-0 flex flex-col items-center text-center">
-                  <img
-                    src="/buttery-logo-gold.png"
-                    alt="Buttery"
-                    className="h-24 w-auto object-contain select-none"
-                    referrerPolicy="no-referrer"
-                  />
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt="Brand Logo"
+                      style={{ height: `${logoHeight}px` }}
+                      className="w-auto object-contain select-none"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <img
+                      src="/buttery-logo-gold.png"
+                      alt="Buttery"
+                      className="h-24 w-auto object-contain select-none"
+                      referrerPolicy="no-referrer"
+                    />
+                  )}
                   <div className="flex items-center justify-center gap-2 mt-4">
                     <div className="h-px w-6 bg-[#C5A059]" />
                     <p className="font-sans text-[9px] tracking-[0.22em] text-[#C5A059] font-bold uppercase">
