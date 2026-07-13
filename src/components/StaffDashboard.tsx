@@ -38,7 +38,8 @@ interface StaffDashboardProps {
   settingsPin: string;
   logoUrl: string;
   logoHeight: number;
-  onUpdateSettings: (stamp: string, brown: string, gold: string, bg: string, newPin: string, logoUrl: string, logoHeight: number) => void;
+  cardBgUrl: string;
+  onUpdateSettings: (stamp: string, brown: string, gold: string, bg: string, newPin: string, logoUrl: string, logoHeight: number, cardBgUrl: string) => void;
 }
 
 export default function StaffDashboard({
@@ -58,6 +59,7 @@ export default function StaffDashboard({
   settingsPin,
   logoUrl,
   logoHeight,
+  cardBgUrl,
   onUpdateSettings,
 }: StaffDashboardProps) {
   // Tabs: 'control' (point administration) and 'users' (manage customers list)
@@ -75,6 +77,7 @@ export default function StaffDashboard({
   const [tempPin, setTempPin] = useState<string>(settingsPin);
   const [tempLogoUrl, setTempLogoUrl] = useState<string>(logoUrl);
   const [tempLogoHeight, setTempLogoHeight] = useState<number>(logoHeight);
+  const [tempCardBgUrl, setTempCardBgUrl] = useState<string>(cardBgUrl);
 
   const THEME_PRESETS = [
     { name: 'Original Buttery (Café & Oro)', brown: '#2D241E', gold: '#C5A059', bg: '#FAF7F2' },
@@ -113,6 +116,7 @@ export default function StaffDashboard({
         setTempPin(settingsPin);
         setTempLogoUrl(logoUrl);
         setTempLogoHeight(logoHeight);
+        setTempCardBgUrl(cardBgUrl);
       } else {
         setTimeout(() => {
           setPinError('PIN Incorrecto. Reintente.');
@@ -1263,10 +1267,55 @@ export default function StaffDashboard({
               </div>
             </div>
 
+            {/* Imagen de fondo de la Tarjeta de Lealtad */}
+            <div className="space-y-2.5">
+              <span className="block font-sans text-[8px] font-extrabold uppercase tracking-widest text-[#C5A059]">
+                4. Imagen de la Tarjeta de Lealtad
+              </span>
+              <div className="bg-[#FAF7F2]/50 border border-stone-200/60 rounded-xl p-3 space-y-3">
+                {/* Preview */}
+                <div className="w-full h-24 rounded-xl overflow-hidden border border-stone-200 bg-stone-100 relative">
+                  <img
+                    src={tempCardBgUrl || 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80'}
+                    alt="Vista previa de tarjeta"
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-0 bg-black/20" />
+                  <span className="absolute bottom-2 left-2 font-sans text-[8px] text-white font-bold uppercase tracking-wider bg-black/40 px-2 py-0.5 rounded-full">
+                    Vista previa
+                  </span>
+                </div>
+
+                {/* URL input */}
+                <div className="space-y-1.5">
+                  <label className="block font-sans text-[8px] font-semibold text-stone-500 uppercase tracking-wider">
+                    URL de imagen (https://...)
+                  </label>
+                  <input
+                    id="card-bg-url-input"
+                    type="url"
+                    value={tempCardBgUrl}
+                    onChange={(e) => setTempCardBgUrl(e.target.value)}
+                    placeholder="https://ejemplo.com/imagen.jpg"
+                    className="w-full bg-stone-50 rounded-xl px-3 py-2 text-[10px] text-brand-brown outline-none border border-stone-200 focus:border-[#C5A059] placeholder:text-stone-300 font-mono"
+                  />
+                  {tempCardBgUrl && tempCardBgUrl !== 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80' && (
+                    <button
+                      onClick={() => setTempCardBgUrl('https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80')}
+                      className="text-[8px] font-semibold text-red-500 hover:underline uppercase tracking-wider cursor-pointer"
+                    >
+                      Restablecer imagen original
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Editar PIN de Seguridad */}
             <div className="space-y-2.5">
               <label htmlFor="settings-pin-input" className="block font-sans text-[8px] font-extrabold uppercase tracking-widest text-[#C5A059]">
-                4. Código PIN de Configuración (4 dígitos)
+                5. Código PIN de Configuración (4 dígitos)
               </label>
               <input
                 id="settings-pin-input"
@@ -1295,7 +1344,7 @@ export default function StaffDashboard({
                 id="settings-btn-save"
                 disabled={tempPin.length !== 4}
                 onClick={() => {
-                  onUpdateSettings(tempStamp, tempBrown, tempGold, tempBg, tempPin, tempLogoUrl, tempLogoHeight);
+                  onUpdateSettings(tempStamp, tempBrown, tempGold, tempBg, tempPin, tempLogoUrl, tempLogoHeight, tempCardBgUrl);
                   setIsSettingsOpen(false);
                   setFeedbackMsg({ text: '¡Configuración de marca actualizada de manera segura!', isError: false });
                   setTimeout(() => setFeedbackMsg(null), 3500);

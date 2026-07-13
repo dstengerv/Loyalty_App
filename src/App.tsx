@@ -117,6 +117,7 @@ export default function App() {
             setSettingsPin(dbSettings.settings_pin || '1234');
             setLogoUrl(dbSettings.logo_url || '');
             setLogoHeight(dbSettings.logo_height !== undefined && dbSettings.logo_height !== null ? Number(dbSettings.logo_height) : 40);
+            setCardBgUrl(dbSettings.card_bg_url || 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80');
 
             localStorage.setItem('buttery_stamp_symbol', dbSettings.stamp_symbol || '🥐');
             localStorage.setItem('buttery_brand_brown', dbSettings.brand_brown || '#2D241E');
@@ -125,6 +126,7 @@ export default function App() {
             localStorage.setItem('buttery_settings_pin', dbSettings.settings_pin || '1234');
             localStorage.setItem('buttery_logo_url', dbSettings.logo_url || '');
             localStorage.setItem('buttery_logo_height', (dbSettings.logo_height !== undefined && dbSettings.logo_height !== null ? dbSettings.logo_height : 40).toString());
+            localStorage.setItem('buttery_card_bg_url', dbSettings.card_bg_url || 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80');
           }
         } catch (settingsErr) {
           console.warn('Fallback: Could not fetch app_settings table or it is not provisioned yet.', settingsErr);
@@ -223,8 +225,9 @@ export default function App() {
     const saved = localStorage.getItem('buttery_logo_height');
     return saved ? parseInt(saved, 10) : 40;
   });
+  const [cardBgUrl, setCardBgUrl] = useState<string>(() => localStorage.getItem('buttery_card_bg_url') || 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80');
 
-  const handleUpdateSettings = async (stamp: string, brown: string, gold: string, bg: string, newPin: string, logo: string, height: number) => {
+  const handleUpdateSettings = async (stamp: string, brown: string, gold: string, bg: string, newPin: string, logo: string, height: number, newCardBgUrl: string) => {
     setStampSymbol(stamp);
     setBrandBrown(brown);
     setBrandGold(gold);
@@ -232,6 +235,7 @@ export default function App() {
     setSettingsPin(newPin);
     setLogoUrl(logo);
     setLogoHeight(height);
+    setCardBgUrl(newCardBgUrl);
     localStorage.setItem('buttery_stamp_symbol', stamp);
     localStorage.setItem('buttery_brand_brown', brown);
     localStorage.setItem('buttery_brand_gold', gold);
@@ -239,6 +243,7 @@ export default function App() {
     localStorage.setItem('buttery_settings_pin', newPin);
     localStorage.setItem('buttery_logo_url', logo);
     localStorage.setItem('buttery_logo_height', height.toString());
+    localStorage.setItem('buttery_card_bg_url', newCardBgUrl);
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -253,6 +258,7 @@ export default function App() {
             settings_pin: newPin,
             logo_url: logo,
             logo_height: height,
+            card_bg_url: newCardBgUrl,
             updated_at: new Date().toISOString()
           }, { onConflict: 'id' });
 
@@ -894,6 +900,7 @@ export default function App() {
                 onLogout={handleLogout}
                 onClaimCompletedCard={handleClaimCompletedCard}
                 stampSymbol={stampSymbol}
+                cardBgUrl={cardBgUrl}
               />
             ) : (
               <StaffDashboard
@@ -913,6 +920,7 @@ export default function App() {
                 settingsPin={settingsPin}
                 logoUrl={logoUrl}
                 logoHeight={logoHeight}
+                cardBgUrl={cardBgUrl}
                 onUpdateSettings={handleUpdateSettings}
               />
             )
