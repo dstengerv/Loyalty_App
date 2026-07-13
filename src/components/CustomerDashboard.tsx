@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Coffee,
-  RefreshCw,
   Gift,
   Sparkles,
   X
@@ -41,19 +40,18 @@ export default function CustomerDashboard({
   stampSymbol,
   cardBgUrl,
 }: CustomerDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'card' | 'history'>('card');
-  const [showQrModal, setShowQrModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'card' | 'history' | 'qr'>('card');
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (showQrModal && qrCanvasRef.current && user.qrCode) {
+    if (activeTab === 'qr' && qrCanvasRef.current && user.qrCode) {
       QRCode.toCanvas(qrCanvasRef.current, user.qrCode, {
         width: 220,
         margin: 2,
         color: { dark: '#2D241E', light: '#FAF7F2' }
       });
     }
-  }, [showQrModal, user.qrCode]);
+  }, [activeTab, user.qrCode]);
 
   // Filter transactions for this user
   const userTransactions = transactions
@@ -117,6 +115,17 @@ export default function CustomerDashboard({
             }`}
           >
             Historial
+          </button>
+          <button
+            id="tab-qr-btn"
+            onClick={() => setActiveTab('qr')}
+            className={`flex-1 py-2 font-sans text-[10px] font-bold uppercase tracking-widest rounded-full cursor-pointer transition-all ${
+              activeTab === 'qr'
+                ? 'bg-white text-[#4A6B4A] shadow'
+                : 'text-white/60 hover:text-white'
+            }`}
+          >
+            Mi QR
           </button>
         </div>
       </div>
@@ -201,18 +210,6 @@ export default function CustomerDashboard({
 
           </div>
 
-          {/* Sticky ACUMULAR SELLO button — opens customer's own QR code for staff to scan */}
-          <div className="px-5 pb-6 pt-3" style={{ background: 'linear-gradient(to top, #3D5C3D, transparent)' }}>
-            <button
-              id="scan-qr-btn"
-              onClick={() => setShowQrModal(true)}
-              className="w-full bg-[#3D5C3D] hover:bg-[#344E34] text-white font-sans text-xs font-bold uppercase tracking-widest py-4 rounded-2xl cursor-pointer transition-colors shadow-lg flex items-center justify-center gap-2.5 border border-white/10"
-            >
-              <RefreshCw className="w-4 h-4 text-[#C5A059]" />
-              Acumular Sello
-            </button>
-          </div>
-
         </div>
       )}
 
@@ -273,33 +270,20 @@ export default function CustomerDashboard({
 
 
 
-      {/* Customer QR Code Modal — centered popup */}
-      {showQrModal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6"
-          onClick={() => setShowQrModal(false)}
-        >
-          <div
-            className="w-full max-w-xs bg-white rounded-3xl px-6 pt-5 pb-7 flex flex-col items-center gap-5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header: logo left, CERRAR right */}
-            <div className="w-full flex items-center justify-between">
-              <img
-                src="/buttery-logo-transparent.png"
-                alt="Buttery"
-                className="h-7 w-auto object-contain select-none"
-                referrerPolicy="no-referrer"
-              />
-              <button
-                onClick={() => setShowQrModal(false)}
-                className="font-sans text-[10px] font-bold uppercase tracking-widest text-[#2D241E]/50 hover:text-[#2D241E] transition-colors cursor-pointer"
-              >
-                Cerrar
-              </button>
-            </div>
+      {/* QR Tab */}
+      {activeTab === 'qr' && (
+        <div className="flex-1 flex flex-col items-center justify-center px-6 pb-10 gap-6">
+          {/* Logo */}
+          <img
+            src="/buttery-logo-transparent.png"
+            alt="Buttery"
+            className="h-10 w-auto object-contain select-none"
+            style={{ mixBlendMode: 'multiply' }}
+            referrerPolicy="no-referrer"
+          />
 
-            {/* QR canvas */}
+          {/* QR canvas on white card */}
+          <div className="bg-white rounded-3xl px-6 pt-5 pb-6 flex flex-col items-center gap-4 shadow-2xl w-full max-w-xs">
             <div className="bg-stone-50 rounded-2xl p-3 border border-stone-100 shadow-inner">
               <canvas ref={qrCanvasRef} />
             </div>
@@ -311,12 +295,12 @@ export default function CustomerDashboard({
                 Código: {user.qrCode}
               </p>
             </div>
-
-            {/* Instruction */}
-            <p className="font-sans text-[10px] text-[#2D241E]/50 text-center leading-relaxed px-2">
-              Muestra este código exclusivo de membresía en caja al ordenar en Buttery Polanco. El staff sumará tu sello de visita al instante.
-            </p>
           </div>
+
+          {/* Instruction */}
+          <p className="font-sans text-[11px] text-white/60 text-center leading-relaxed max-w-xs">
+            Muestra este código en caja al ordenar. El staff sumará tu sello de visita al instante.
+          </p>
         </div>
       )}
 
