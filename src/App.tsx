@@ -852,9 +852,11 @@ export default function App() {
 
   return (
       <div className={`font-sans selection:bg-amber-100 selection:text-amber-900 ${
-        currentUser
-          ? 'min-h-screen bg-[#F3EFE9] flex flex-col justify-center items-center py-6 px-4'
-          : 'min-h-screen flex flex-col'
+        currentUser?.role === 'staff'
+          ? 'min-h-screen flex flex-col'
+          : currentUser?.role === 'client'
+            ? 'min-h-screen bg-[#F3EFE9] flex flex-col justify-center items-center py-6 px-4'
+            : 'min-h-screen flex flex-col'
       }`}>
       
       {/* Toast Notification message */}
@@ -882,14 +884,14 @@ export default function App() {
 
       {/* Main Core Outer Container Wrapper */}
       <div className={`w-full transition-all duration-300 ${
-        currentUser?.role === 'staff' ? 'max-w-5xl' : currentUser ? 'max-w-xl' : 'w-full'
+        currentUser?.role === 'client' ? 'max-w-xl' : 'w-full'
       }`}>
 
         {/* The screen itself */}
         <div 
           id="pwa-screen"
           className={`w-full bg-brand-bg overflow-hidden flex flex-col ${
-            currentUser
+            currentUser?.role === 'client'
               ? 'rounded-3xl border border-[#1C1A17]/10 shadow-lg min-h-[780px]'
               : 'min-h-screen'
           }`}
