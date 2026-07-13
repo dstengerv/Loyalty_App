@@ -955,7 +955,7 @@ export default function App() {
 
   return (
       <div className={`font-sans selection:bg-amber-100 selection:text-amber-900 min-h-screen flex flex-col ${
-        currentUser?.role === 'client' ? 'bg-[#2F4A3A] items-center justify-start' : ''
+        currentUser?.role === 'client' ? 'bg-[#4A6B4A] items-center justify-start' : ''
       }`}>
       
       {/* Toast Notification message */}
@@ -968,7 +968,7 @@ export default function App() {
               ? 'bg-rose-600 border-rose-500/30 text-white'
               : successToast.type === 'info'
                 ? 'bg-[#2D241E] border-white/10 text-white'
-                : 'bg-[#2F4A3A] border-white/10 text-white'
+                : 'bg-[#4A6B4A] border-white/10 text-white'
           }`}
         >
           {successToast.type === 'error' ? (
@@ -1039,17 +1039,16 @@ export default function App() {
             <div className="flex-1 flex flex-col md:flex-row min-h-screen">
 
               {/* ── LEFT / TOP PANEL: Dark green brand panel ── */}
-              <div className="relative flex flex-col bg-[#2F4A3A] overflow-hidden
-                              md:w-[340px] md:min-h-full md:flex-shrink-0
-                              min-h-[260px]">
+              <div className="relative flex flex-col overflow-hidden md:w-[340px] md:min-h-full md:flex-shrink-0 min-h-[260px]"
+                style={{ background: 'linear-gradient(175deg, #6B8F6B 0%, #4A6B4A 55%, #3D5C3D 100%)' }}>
 
                 {/* Logo + location */}
                 <div className="relative z-10 px-8 pt-10 pb-0 flex flex-col items-center text-center">
                   <img
-                    src="/buttery-logo-new.jpg"
+                    src="/buttery-logo-transparent.png"
                     alt="Buttery"
-                    className="w-48 object-contain select-none"
-                    style={{ mixBlendMode: 'screen' }}
+                    className="w-44 object-contain select-none"
+                    style={{ mixBlendMode: 'multiply' }}
                     referrerPolicy="no-referrer"
                   />
                   <div className="flex items-center justify-center gap-2 mt-4">
@@ -1084,7 +1083,7 @@ export default function App() {
                   </div>
 
                   {/* Reward badge */}
-                  <div className="bg-[#1C2E25] border border-[#C5A059]/20 rounded-2xl p-4 flex items-start gap-3">
+                  <div className="bg-[#3D5C3D] border border-[#C5A059]/20 rounded-2xl p-4 flex items-start gap-3">
                     <Gift className="w-5 h-5 text-[#C5A059] flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-sans text-[11px] font-bold text-white leading-snug">¡Tu recompensa espera!</p>
@@ -1115,14 +1114,14 @@ export default function App() {
 
                 {/* Mobile reward pill */}
                 <div className="flex md:hidden px-8 pb-8 relative z-10">
-                  <div className="bg-[#1C2E25]/80 border border-[#C5A059]/30 rounded-full px-3 py-1.5 flex items-center gap-2">
+                  <div className="bg-[#3D5C3D]/80 border border-[#C5A059]/30 rounded-full px-3 py-1.5 flex items-center gap-2">
                     <Gift className="w-3.5 h-3.5 text-[#C5A059]" />
                     <p className="font-sans text-[10px] font-bold text-white">¡Tu recompensa espera!</p>
                   </div>
                 </div>
 
                 {/* Curved bottom divider on mobile */}
-                <div className="absolute bottom-0 left-0 right-0 h-8 bg-[#FAF7F2] md:hidden"
+                <div className="absolute bottom-0 left-0 right-0 h-8 bg-brand-bg md:hidden"
                   style={{ borderRadius: '50% 50% 0 0 / 100% 100% 0 0' }} />
               </div>
 
@@ -1172,7 +1171,7 @@ export default function App() {
                             value={emailInput}
                             onChange={(e) => setEmailInput(e.target.value)}
                             required
-                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#2F4A3A] transition-colors shadow-sm"
+                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#4A6B4A] transition-colors shadow-sm"
                           />
                         </div>
                       </div>
@@ -1198,7 +1197,7 @@ export default function App() {
                             value={passwordInput}
                             onChange={(e) => setPasswordInput(e.target.value)}
                             required
-                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 pl-11 pr-12 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#2F4A3A] transition-colors shadow-sm tracking-widest"
+                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 pl-11 pr-12 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#4A6B4A] transition-colors shadow-sm tracking-widest"
                           />
                           <button
                             type="button"
@@ -1214,7 +1213,7 @@ export default function App() {
                       <button
                         type="submit"
                         id="login-submit-btn"
-                        className="w-full bg-[#2F4A3A] hover:bg-[#243d2e] text-white py-4 rounded-2xl font-sans font-bold uppercase tracking-[0.22em] text-xs transition-colors flex items-center justify-center gap-2 group cursor-pointer shadow-md mt-2"
+                        className="w-full bg-[#4A6B4A] hover:bg-[#3D5C3D] text-white py-4 rounded-2xl font-sans font-bold uppercase tracking-[0.22em] text-xs transition-colors flex items-center justify-center gap-2 group cursor-pointer shadow-md mt-2"
                       >
                         <span>Iniciar Sesión</span>
                         <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -1234,7 +1233,7 @@ export default function App() {
                             value={nameInput}
                             onChange={(e) => setNameInput(e.target.value)}
                             required
-                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#2F4A3A] transition-colors shadow-sm"
+                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#4A6B4A] transition-colors shadow-sm"
                           />
                         </div>
                       </div>
@@ -1250,7 +1249,7 @@ export default function App() {
                             value={emailInput}
                             onChange={(e) => setEmailInput(e.target.value)}
                             required
-                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#2F4A3A] transition-colors shadow-sm"
+                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#4A6B4A] transition-colors shadow-sm"
                           />
                         </div>
                       </div>
@@ -1265,7 +1264,7 @@ export default function App() {
                             value={passwordInput}
                             onChange={(e) => setPasswordInput(e.target.value)}
                             required
-                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 px-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#2F4A3A] transition-colors shadow-sm tracking-widest"
+                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 px-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#4A6B4A] transition-colors shadow-sm tracking-widest"
                           />
                         </div>
                         <div className="space-y-1.5">
@@ -1277,7 +1276,7 @@ export default function App() {
                             value={confirmPasswordInput}
                             onChange={(e) => setConfirmPasswordInput(e.target.value)}
                             required
-                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 px-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#2F4A3A] transition-colors shadow-sm tracking-widest"
+                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 px-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#4A6B4A] transition-colors shadow-sm tracking-widest"
                           />
                         </div>
                       </div>
@@ -1290,7 +1289,7 @@ export default function App() {
                       <button
                         type="submit"
                         id="register-submit-btn"
-                        className="w-full bg-[#2F4A3A] hover:bg-[#243d2e] text-white py-4 rounded-2xl font-sans font-bold uppercase tracking-[0.22em] text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                        className="w-full bg-[#4A6B4A] hover:bg-[#3D5C3D] text-white py-4 rounded-2xl font-sans font-bold uppercase tracking-[0.22em] text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
                       >
                         Registrarme y Recibir Puntos
                       </button>

@@ -492,7 +492,7 @@ export default function StaffDashboard({
           className={`fixed top-6 left-4 right-4 mx-auto max-w-sm z-50 px-5 py-3.5 rounded-2xl flex items-center gap-3 shadow-2xl border ${
             feedbackMsg.isError
               ? 'bg-rose-600 border-rose-500/30 text-white'
-              : 'bg-[#2F4A3A] border-white/10 text-white'
+              : 'bg-[#4A6B4A] border-white/10 text-white'
           }`}
         >
           {feedbackMsg.isError ? (
