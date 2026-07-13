@@ -8,8 +8,11 @@ import {
   Coffee,
   RefreshCw,
   Gift,
-  Sparkles
+  Sparkles,
+  X
 } from 'lucide-react';
+import QRCode from 'qrcode';
+import { useEffect, useRef } from 'react';
 import { User, Transaction, RewardItem, QRVoucher } from '../types';
 import butteryLogo from '../assets/buttery_logo.svg';
 
@@ -39,6 +42,18 @@ export default function CustomerDashboard({
   cardBgUrl,
 }: CustomerDashboardProps) {
   const [activeTab, setActiveTab] = useState<'card' | 'history'>('card');
+  const [showQrModal, setShowQrModal] = useState(false);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (showQrModal && qrCanvasRef.current && user.qrCode) {
+      QRCode.toCanvas(qrCanvasRef.current, user.qrCode, {
+        width: 220,
+        margin: 2,
+        color: { dark: '#2D241E', light: '#FAF7F2' }
+      });
+    }
+  }, [showQrModal, user.qrCode]);
 
   // Filter transactions for this user
   const userTransactions = transactions
@@ -194,11 +209,11 @@ export default function CustomerDashboard({
 
           </div>
 
-          {/* Sticky ACUMULAR SELLO button — inside the card tab, sticks to bottom */}
+          {/* Sticky ACUMULAR SELLO button — opens customer's own QR code for staff to scan */}
           <div className="px-5 pb-6 pt-3 bg-[#2F4A3A]">
             <button
               id="scan-qr-btn"
-              onClick={onScanPurchaseCode}
+              onClick={() => setShowQrModal(true)}
               className="w-full bg-[#1C2E25] hover:bg-[#162319] text-white font-sans text-xs font-bold uppercase tracking-widest py-4 rounded-2xl cursor-pointer transition-colors shadow-lg flex items-center justify-center gap-2.5 border border-white/10"
             >
               <RefreshCw className="w-4 h-4 text-[#C5A059]" />
@@ -265,6 +280,49 @@ export default function CustomerDashboard({
       )}
 
 
+
+      {/* Customer QR Code Modal — shown when they tap ACUMULAR SELLO */}
+      {showQrModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-end justify-center animate-fadeIn"
+          onClick={() => setShowQrModal(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-[#FAF7F2] rounded-t-[2rem] px-6 pt-6 pb-10 flex flex-col items-center gap-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header row */}
+            <div className="w-full flex items-center justify-between">
+              <div>
+                <p className="font-sans text-[8px] font-extrabold uppercase tracking-[0.2em] text-[#C5A059]">Acumular Sello</p>
+                <h3 className="font-serif italic font-semibold text-[#2D241E] text-base mt-0.5 leading-none">Tu código QR</h3>
+              </div>
+              <button
+                onClick={() => setShowQrModal(false)}
+                className="w-8 h-8 rounded-full bg-stone-200 hover:bg-stone-300 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4 text-[#2D241E]" />
+              </button>
+            </div>
+
+            {/* Instruction */}
+            <p className="font-sans text-[11px] text-[#2D241E]/60 text-center leading-relaxed">
+              Muestra este código al barista para que lo escanee y acredite tu sello de visita.
+            </p>
+
+            {/* QR canvas */}
+            <div className="bg-[#FAF7F2] rounded-2xl p-3 border border-stone-200 shadow-inner">
+              <canvas ref={qrCanvasRef} />
+            </div>
+
+            {/* User label */}
+            <div className="text-center space-y-0.5">
+              <p className="font-serif italic font-semibold text-[#2D241E] text-sm">{user.name}</p>
+              <p className="font-sans text-[10px] text-[#2D241E]/40 font-mono">{user.qrCode}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 10 Stamps Completion Modal */}
       {stampCount === 10 && (
