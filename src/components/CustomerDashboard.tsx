@@ -281,45 +281,49 @@ export default function CustomerDashboard({
 
 
 
-      {/* Customer QR Code Modal — shown when they tap ACUMULAR SELLO */}
+      {/* Customer QR Code Modal — centered popup */}
       {showQrModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-end justify-center animate-fadeIn"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6"
           onClick={() => setShowQrModal(false)}
         >
           <div
-            className="w-full max-w-sm bg-[#FAF7F2] rounded-t-[2rem] px-6 pt-6 pb-10 flex flex-col items-center gap-5 shadow-2xl"
+            className="w-full max-w-xs bg-white rounded-3xl px-6 pt-5 pb-7 flex flex-col items-center gap-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header row */}
+            {/* Header: logo left, CERRAR right */}
             <div className="w-full flex items-center justify-between">
-              <div>
-                <p className="font-sans text-[8px] font-extrabold uppercase tracking-[0.2em] text-[#C5A059]">Acumular Sello</p>
-                <h3 className="font-serif italic font-semibold text-[#2D241E] text-base mt-0.5 leading-none">Tu código QR</h3>
-              </div>
+              <img
+                src={butteryLogo}
+                alt="Buttery"
+                className="h-6 w-auto object-contain mix-blend-multiply select-none"
+                referrerPolicy="no-referrer"
+              />
               <button
                 onClick={() => setShowQrModal(false)}
-                className="w-8 h-8 rounded-full bg-stone-200 hover:bg-stone-300 flex items-center justify-center transition-colors cursor-pointer"
+                className="font-sans text-[10px] font-bold uppercase tracking-widest text-[#2D241E]/50 hover:text-[#2D241E] transition-colors cursor-pointer"
               >
-                <X className="w-4 h-4 text-[#2D241E]" />
+                Cerrar
               </button>
             </div>
 
-            {/* Instruction */}
-            <p className="font-sans text-[11px] text-[#2D241E]/60 text-center leading-relaxed">
-              Muestra este código al barista para que lo escanee y acredite tu sello de visita.
-            </p>
-
             {/* QR canvas */}
-            <div className="bg-[#FAF7F2] rounded-2xl p-3 border border-stone-200 shadow-inner">
+            <div className="bg-stone-50 rounded-2xl p-3 border border-stone-100 shadow-inner">
               <canvas ref={qrCanvasRef} />
             </div>
 
-            {/* User label */}
-            <div className="text-center space-y-0.5">
-              <p className="font-serif italic font-semibold text-[#2D241E] text-sm">{user.name}</p>
-              <p className="font-sans text-[10px] text-[#2D241E]/40 font-mono">{user.qrCode}</p>
+            {/* Name + code */}
+            <div className="text-center space-y-1">
+              <p className="font-serif italic font-bold text-[#2D241E] text-base leading-snug">{user.name}</p>
+              <p className="font-sans text-[9px] font-extrabold uppercase tracking-[0.18em] text-[#C5A059]">
+                Código: {user.qrCode}
+              </p>
             </div>
+
+            {/* Instruction */}
+            <p className="font-sans text-[10px] text-[#2D241E]/50 text-center leading-relaxed px-2">
+              Muestra este código exclusivo de membresía en caja al ordenar en Buttery Polanco. El staff sumará tu sello de visita al instante.
+            </p>
           </div>
         </div>
       )}
