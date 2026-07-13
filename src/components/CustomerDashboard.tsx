@@ -128,7 +128,7 @@ export default function CustomerDashboard({
 
             {/* Banner card with logo overlay */}
             {/* Outer wrapper allows the logo circle to overflow the banner bottom */}
-            <div className="relative w-full pb-7">
+            <div className="relative w-full">
               <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: '16/7' }}>
                 {/* Background photo */}
                 <img
@@ -151,15 +151,7 @@ export default function CustomerDashboard({
                 </div>
               </div>
 
-              {/* Centered logo circle — sits below banner, centered horizontally */}
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white shadow-lg border-2 border-white flex items-center justify-center z-10 overflow-hidden">
-                <img
-                  src="/buttery-logo-transparent.png"
-                  alt="Buttery"
-                  className="w-12 h-12 object-contain select-none"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
+
             </div>
 
             {/* Reward label */}
