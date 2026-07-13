@@ -851,7 +851,11 @@ export default function App() {
   const activeVouchers = vouchers.filter(v => !v.isUsed);
 
   return (
-    <div className="min-h-screen bg-[#F3EFE9] flex flex-col justify-center items-center py-6 px-4 font-sans selection:bg-amber-100 selection:text-amber-900">
+      <div className={`font-sans selection:bg-amber-100 selection:text-amber-900 ${
+        currentUser
+          ? 'min-h-screen bg-[#F3EFE9] flex flex-col justify-center items-center py-6 px-4'
+          : 'min-h-screen flex flex-col'
+      }`}>
       
       {/* Toast Notification message */}
       {successToast && (
@@ -878,13 +882,17 @@ export default function App() {
 
       {/* Main Core Outer Container Wrapper */}
       <div className={`w-full transition-all duration-300 ${
-        currentUser?.role === 'staff' ? 'max-w-5xl' : currentUser ? 'max-w-xl' : 'max-w-3xl'
+        currentUser?.role === 'staff' ? 'max-w-5xl' : currentUser ? 'max-w-xl' : 'w-full'
       }`}>
 
         {/* The screen itself */}
         <div 
           id="pwa-screen"
-          className="w-full bg-brand-bg overflow-hidden flex flex-col rounded-3xl border border-[#1C1A17]/10 shadow-lg min-h-[780px]"
+          className={`w-full bg-brand-bg overflow-hidden flex flex-col ${
+            currentUser
+              ? 'rounded-3xl border border-[#1C1A17]/10 shadow-lg min-h-[780px]'
+              : 'min-h-screen'
+          }`}
           style={{
             '--color-brand-brown': brandBrown,
             '--color-brand-gold': brandGold,
@@ -930,16 +938,12 @@ export default function App() {
             )
           ) : (
             /* LOGIN & ACCOUNT PORTAL SCREENS */
-            <div className="flex-1 flex flex-col md:flex-row min-h-[780px]">
+            <div className="flex-1 flex flex-col md:flex-row min-h-screen">
 
               {/* ── LEFT / TOP PANEL: Dark green brand panel ── */}
               <div className="relative flex flex-col bg-[#2F4A3A] overflow-hidden
-                              md:w-[320px] md:min-h-full md:flex-shrink-0
-                              min-h-[240px] rounded-t-3xl md:rounded-t-none md:rounded-l-3xl">
-
-                {/* Decorative circle blob top-right */}
-                <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />
-                <div className="absolute top-20 -right-8 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
+                              md:w-[340px] md:min-h-full md:flex-shrink-0
+                              min-h-[260px]">
 
                 {/* Logo + location */}
                 <div className="relative z-10 px-8 pt-8 pb-0">
@@ -955,7 +959,8 @@ export default function App() {
                     <img
                       src={butteryLogo}
                       alt="Buttery"
-                      className="h-14 w-auto object-contain select-none brightness-0 invert"
+                      className="h-14 w-auto object-contain select-none"
+                      style={{ filter: 'brightness(0) saturate(100%) invert(68%) sepia(40%) saturate(600%) hue-rotate(5deg) brightness(95%)' }}
                       referrerPolicy="no-referrer"
                     />
                   )}
@@ -1033,8 +1038,7 @@ export default function App() {
               </div>
 
               {/* ── RIGHT / BOTTOM PANEL: Cream form panel ── */}
-              <div className="flex-1 bg-[#FAF7F2] flex flex-col justify-center px-8 py-10 md:px-14 md:py-0
-                              rounded-b-3xl md:rounded-b-none md:rounded-r-3xl">
+              <div className="flex-1 bg-[#FAF7F2] flex flex-col justify-center px-8 py-10 md:px-14 md:py-0">
                 <div className="w-full max-w-sm mx-auto space-y-7">
 
                   {/* Heading */}
