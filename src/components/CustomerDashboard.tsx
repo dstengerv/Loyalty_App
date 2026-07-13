@@ -69,7 +69,7 @@ export default function CustomerDashboard({
   const isStampFilled = (idx: number) => stampCount >= idx + 1;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#2F4A3A] text-white overflow-hidden">
+    <div className="flex-1 flex flex-col h-full text-white overflow-hidden" style={{ background: 'linear-gradient(175deg, #6B8F6B 0%, #4A6B4A 50%, #3D5C3D 100%)' }}>
 
       {/* Header */}
       <div className="px-5 pt-5 pb-3 flex items-center justify-between">
@@ -101,7 +101,7 @@ export default function CustomerDashboard({
             onClick={() => setActiveTab('card')}
             className={`flex-1 py-2 font-sans text-[10px] font-bold uppercase tracking-widest rounded-full cursor-pointer transition-all ${
               activeTab === 'card'
-                ? 'bg-white text-[#2F4A3A] shadow'
+                ? 'bg-white text-[#4A6B4A] shadow'
                 : 'text-white/60 hover:text-white'
             }`}
           >
@@ -112,7 +112,7 @@ export default function CustomerDashboard({
             onClick={() => setActiveTab('history')}
             className={`flex-1 py-2 font-sans text-[10px] font-bold uppercase tracking-widest rounded-full cursor-pointer transition-all ${
               activeTab === 'history'
-                ? 'bg-white text-[#2F4A3A] shadow'
+                ? 'bg-white text-[#4A6B4A] shadow'
                 : 'text-white/60 hover:text-white'
             }`}
           >
@@ -128,7 +128,7 @@ export default function CustomerDashboard({
 
             {/* Banner card with logo overlay */}
             {/* Outer wrapper allows the logo circle to overflow the banner bottom */}
-            <div className="relative w-full pb-7">
+            <div className="relative w-full">
               <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: '16/7' }}>
                 {/* Background photo */}
                 <img
@@ -151,15 +151,7 @@ export default function CustomerDashboard({
                 </div>
               </div>
 
-              {/* Centered logo circle — sits below banner, centered horizontally */}
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white shadow-lg border-2 border-white flex items-center justify-center z-10">
-                <img
-                  src={butteryLogo}
-                  alt="Buttery"
-                  className="h-10 w-auto object-contain mix-blend-multiply select-none"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
+
             </div>
 
             {/* Reward label */}
@@ -180,7 +172,7 @@ export default function CustomerDashboard({
                     key={idx}
                     className={`aspect-square rounded-full overflow-hidden flex items-center justify-center border-2 transition-all ${
                       filled
-                        ? 'border-[#C5A059] bg-[#3A5A48]'
+                        ? 'border-[#C5A059] bg-[#4A6B4A]'
                         : 'border-white/20 bg-white/5'
                     }`}
                   >
@@ -210,11 +202,11 @@ export default function CustomerDashboard({
           </div>
 
           {/* Sticky ACUMULAR SELLO button — opens customer's own QR code for staff to scan */}
-          <div className="px-5 pb-6 pt-3 bg-[#2F4A3A]">
+          <div className="px-5 pb-6 pt-3" style={{ background: 'linear-gradient(to top, #3D5C3D, transparent)' }}>
             <button
               id="scan-qr-btn"
               onClick={() => setShowQrModal(true)}
-              className="w-full bg-[#1C2E25] hover:bg-[#162319] text-white font-sans text-xs font-bold uppercase tracking-widest py-4 rounded-2xl cursor-pointer transition-colors shadow-lg flex items-center justify-center gap-2.5 border border-white/10"
+              className="w-full bg-[#3D5C3D] hover:bg-[#344E34] text-white font-sans text-xs font-bold uppercase tracking-widest py-4 rounded-2xl cursor-pointer transition-colors shadow-lg flex items-center justify-center gap-2.5 border border-white/10"
             >
               <RefreshCw className="w-4 h-4 text-[#C5A059]" />
               Acumular Sello
@@ -294,9 +286,9 @@ export default function CustomerDashboard({
             {/* Header: logo left, CERRAR right */}
             <div className="w-full flex items-center justify-between">
               <img
-                src={butteryLogo}
+                src="/buttery-logo-transparent.png"
                 alt="Buttery"
-                className="h-6 w-auto object-contain mix-blend-multiply select-none"
+                className="h-7 w-auto object-contain select-none"
                 referrerPolicy="no-referrer"
               />
               <button
@@ -335,14 +327,14 @@ export default function CustomerDashboard({
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-6 animate-fadeIn"
         >
           <div
-            className="w-full max-w-sm bg-[#2F4A3A] rounded-[2.5rem] p-8 text-center space-y-6 flex flex-col items-center shadow-2xl border border-[#C5A059]/30 relative overflow-hidden"
+            className="w-full max-w-sm bg-[#4A6B4A] rounded-[2.5rem] p-8 text-center space-y-6 flex flex-col items-center shadow-2xl border border-[#C5A059]/30 relative overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#C5A059] via-yellow-400 to-[#C5A059]" />
 
             <div className="relative my-2">
               <div className="absolute inset-0 bg-[#C5A059]/15 rounded-full blur-xl scale-150 animate-pulse" />
-              <div className="w-24 h-24 bg-[#3A5A48] rounded-full flex items-center justify-center shadow-lg border border-[#C5A059]/30 relative">
+              <div className="w-24 h-24 bg-[#5C7A5C] rounded-full flex items-center justify-center shadow-lg border border-[#C5A059]/30 relative">
                 {stampSymbol && (stampSymbol.startsWith('data:image/') || stampSymbol.startsWith('http')) ? (
                   <img src={stampSymbol} alt="Sello" className="w-14 h-14 object-contain select-none animate-pulse" referrerPolicy="no-referrer" />
                 ) : (
