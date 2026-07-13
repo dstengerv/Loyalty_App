@@ -851,13 +851,7 @@ export default function App() {
   const activeVouchers = vouchers.filter(v => !v.isUsed);
 
   return (
-      <div className={`font-sans selection:bg-amber-100 selection:text-amber-900 ${
-        currentUser?.role === 'staff'
-          ? 'min-h-screen flex flex-col'
-          : currentUser?.role === 'client'
-            ? 'min-h-screen bg-[#F3EFE9] flex flex-col justify-center items-center py-6 px-4'
-            : 'min-h-screen flex flex-col'
-      }`}>
+      <div className="font-sans selection:bg-amber-100 selection:text-amber-900 min-h-screen flex flex-col">
       
       {/* Toast Notification message */}
       {successToast && (
@@ -883,18 +877,12 @@ export default function App() {
       )}
 
       {/* Main Core Outer Container Wrapper */}
-      <div className={`w-full transition-all duration-300 ${
-        currentUser?.role === 'client' ? 'max-w-xl' : 'w-full'
-      }`}>
+      <div className="w-full">
 
         {/* The screen itself */}
         <div 
           id="pwa-screen"
-          className={`w-full bg-brand-bg overflow-hidden flex flex-col ${
-            currentUser?.role === 'client'
-              ? 'rounded-3xl border border-[#1C1A17]/10 shadow-lg min-h-[780px]'
-              : 'min-h-screen'
-          }`}
+          className="w-full bg-brand-bg overflow-hidden flex flex-col min-h-screen"
           style={{
             '--color-brand-brown': brandBrown,
             '--color-brand-gold': brandGold,
