@@ -54,7 +54,7 @@ export default function CustomerDashboard({
   const isStampFilled = (idx: number) => stampCount >= idx + 1;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#2F4A3A] text-white pb-0">
+    <div className="flex-1 flex flex-col h-full bg-[#2F4A3A] text-white overflow-hidden">
 
       {/* Header */}
       <div className="px-5 pt-5 pb-3 flex items-center justify-between">
@@ -108,47 +108,51 @@ export default function CustomerDashboard({
 
       {/* Card Tab */}
       {activeTab === 'card' && (
-        <div className="flex-1 flex flex-col px-5 space-y-5 overflow-y-auto pb-32">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-5 space-y-5 pb-4">
 
-          {/* Banner card with logo overlay */}
-          <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: '16/7' }}>
-            {/* Background photo */}
-            <img
-              src={bannerUrl}
-              alt="Tarjeta de lealtad"
-              className="absolute inset-0 w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-            {/* Dark overlay for contrast */}
-            <div className="absolute inset-0 bg-black/25" />
+            {/* Banner card with logo overlay */}
+            {/* Outer wrapper allows the logo circle to overflow the banner bottom */}
+            <div className="relative w-full pb-7">
+              <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: '16/7' }}>
+                {/* Background photo */}
+                <img
+                  src={bannerUrl}
+                  alt="Tarjeta de lealtad"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+                {/* Dark overlay for contrast */}
+                <div className="absolute inset-0 bg-black/25" />
 
-            {/* Pill labels */}
-            <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
-              <span className="bg-[#C5A059] text-white font-sans text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-                Sello por visita
-              </span>
-              <span className="bg-black/50 backdrop-blur-sm text-white font-sans text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
-                Premio a los 10 sellos
-              </span>
+                {/* Pill labels */}
+                <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+                  <span className="bg-[#C5A059] text-white font-sans text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                    Sello por visita
+                  </span>
+                  <span className="bg-black/50 backdrop-blur-sm text-white font-sans text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                    Premio a los 10 sellos
+                  </span>
+                </div>
+              </div>
+
+              {/* Centered logo circle — sits below banner, centered horizontally */}
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-white shadow-lg border-2 border-white flex items-center justify-center z-10">
+                <img
+                  src={butteryLogo}
+                  alt="Buttery"
+                  className="h-10 w-auto object-contain mix-blend-multiply select-none"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
             </div>
 
-            {/* Centered logo circle — overlaps bottom edge */}
-            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-white shadow-lg border-2 border-white flex items-center justify-center z-10">
-              <img
-                src={butteryLogo}
-                alt="Buttery"
-                className="h-8 w-auto object-contain mix-blend-multiply select-none"
-                referrerPolicy="no-referrer"
-              />
+            {/* Reward label */}
+            <div className="text-center">
+              <p className="font-serif italic font-semibold text-white text-sm leading-snug">
+                Recompensa: <span className="text-[#C5A059]">¡Tu recompensa espera!</span>
+              </p>
             </div>
-          </div>
-
-          {/* Reward label (below the logo bump) */}
-          <div className="pt-5 text-center">
-            <p className="font-serif italic font-semibold text-white text-sm leading-snug">
-              Recompensa: <span className="text-[#C5A059]">¡Tu recompensa espera!</span>
-            </p>
-          </div>
 
           {/* Stamp grid */}
           <div className="space-y-3">
@@ -186,6 +190,20 @@ export default function CustomerDashboard({
             <p className="text-center font-sans text-[11px] text-white/60 font-medium">
               {stampCount} de 10 sellos acumulados
             </p>
+          </div>
+
+          </div>
+
+          {/* Sticky ACUMULAR SELLO button — inside the card tab, sticks to bottom */}
+          <div className="px-5 pb-6 pt-3 bg-[#2F4A3A]">
+            <button
+              id="scan-qr-btn"
+              onClick={onScanPurchaseCode}
+              className="w-full bg-[#1C2E25] hover:bg-[#162319] text-white font-sans text-xs font-bold uppercase tracking-widest py-4 rounded-2xl cursor-pointer transition-colors shadow-lg flex items-center justify-center gap-2.5 border border-white/10"
+            >
+              <RefreshCw className="w-4 h-4 text-[#C5A059]" />
+              Acumular Sello
+            </button>
           </div>
 
         </div>
@@ -246,17 +264,7 @@ export default function CustomerDashboard({
         </div>
       )}
 
-      {/* Bottom sticky ACUMULAR SELLO button */}
-      <div className="fixed bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-gradient-to-t from-[#2F4A3A] via-[#2F4A3A] to-transparent z-20 max-w-xl mx-auto w-full">
-        <button
-          id="scan-qr-btn"
-          onClick={onScanPurchaseCode}
-          className="w-full bg-[#1C2E25] hover:bg-[#162319] text-white font-sans text-xs font-bold uppercase tracking-widest py-4 rounded-2xl cursor-pointer transition-colors shadow-lg flex items-center justify-center gap-2.5 border border-white/10"
-        >
-          <RefreshCw className="w-4 h-4 text-[#C5A059]" />
-          Acumular Sello
-        </button>
-      </div>
+
 
       {/* 10 Stamps Completion Modal */}
       {stampCount === 10 && (
