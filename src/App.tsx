@@ -1,26 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Lock, 
-  Mail, 
-  User as UserIcon, 
-  Sparkles, 
-  Coffee, 
-  ChevronRight, 
-  QrCode, 
+import {
+  Sparkles,
+  ArrowRight,
+  Check,
   CheckCircle,
-  Clock,
   AlertCircle,
   Info,
   Eye,
   EyeOff,
-  Gift
 } from 'lucide-react';
 import { User, Transaction, RewardItem, QRVoucher, UserRole } from './types';
 import { SEED_USERS, SEED_TRANSACTIONS, SEED_VOUCHERS, REWARDS } from './data';
 import CustomerDashboard from './components/CustomerDashboard';
 import StaffDashboard from './components/StaffDashboard';
 import QRCameraScanner from './components/QRCameraScanner';
-import butteryLogo from './assets/buttery_logo.svg';
+import butteryLogoGold from './assets/buttery_logo_gold.png';
+import butteryStorefront from './assets/buttery_storefront.jpg';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 
 
@@ -113,19 +108,19 @@ export default function App() {
             .maybeSingle();
 
           if (!settingsError && dbSettings) {
-            setStampSymbol(dbSettings.stamp_symbol || '🥐');
-            setBrandBrown(dbSettings.brand_brown || '#2D241E');
-            setBrandGold(dbSettings.brand_gold || '#C5A059');
-            setBrandBg(dbSettings.brand_bg || '#FAF7F2');
+                    setStampSymbol(dbSettings.stamp_symbol || '🥐');
+                    setBrandBrown(dbSettings.brand_brown || '#1C2117');
+                    setBrandGold(dbSettings.brand_gold || '#C5A059');
+                    setBrandBg(dbSettings.brand_bg || '#FAF7F2');
             setSettingsPin(dbSettings.settings_pin || '1234');
             setLogoUrl(dbSettings.logo_url || '');
             setLogoHeight(dbSettings.logo_height !== undefined && dbSettings.logo_height !== null ? Number(dbSettings.logo_height) : 40);
             setCardBgUrl(dbSettings.card_bg_url || 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80');
 
-            localStorage.setItem('buttery_stamp_symbol', dbSettings.stamp_symbol || '🥐');
-            localStorage.setItem('buttery_brand_brown', dbSettings.brand_brown || '#2D241E');
-            localStorage.setItem('buttery_brand_gold', dbSettings.brand_gold || '#C5A059');
-            localStorage.setItem('buttery_brand_bg', dbSettings.brand_bg || '#FAF7F2');
+                    localStorage.setItem('buttery_stamp_symbol', dbSettings.stamp_symbol || '🥐');
+                    localStorage.setItem('buttery_brand_brown', dbSettings.brand_brown || '#1C2117');
+                    localStorage.setItem('buttery_brand_gold', dbSettings.brand_gold || '#C5A059');
+                    localStorage.setItem('buttery_brand_bg', dbSettings.brand_bg || '#FAF7F2');
             localStorage.setItem('buttery_settings_pin', dbSettings.settings_pin || '1234');
             localStorage.setItem('buttery_logo_url', dbSettings.logo_url || '');
             localStorage.setItem('buttery_logo_height', (dbSettings.logo_height !== undefined && dbSettings.logo_height !== null ? dbSettings.logo_height : 40).toString());
@@ -219,7 +214,7 @@ export default function App() {
 
   // Dynamic Brand Theme & Config States
   const [stampSymbol, setStampSymbol] = useState<string>(() => localStorage.getItem('buttery_stamp_symbol') || '🥐');
-  const [brandBrown, setBrandBrown] = useState<string>(() => localStorage.getItem('buttery_brand_brown') || '#2D241E');
+  const [brandBrown, setBrandBrown] = useState<string>(() => localStorage.getItem('buttery_brand_brown') || '#1C2117');
   const [brandGold, setBrandGold] = useState<string>(() => localStorage.getItem('buttery_brand_gold') || '#C5A059');
   const [brandBg, setBrandBg] = useState<string>(() => localStorage.getItem('buttery_brand_bg') || '#FAF7F2');
   const [settingsPin, setSettingsPin] = useState<string>(() => localStorage.getItem('buttery_settings_pin') || '1234');
@@ -299,7 +294,7 @@ export default function App() {
       setIsStandalone(true);
       setDeferredPrompt(null);
       setIsInstallable(false);
-      showToast('¡Buttery Loyalty instalada con éxito en tu pantalla de inicio!', 'success');
+      showToast('¡Buttery instalada con éxito en tu pantalla de inicio!', 'success');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -346,17 +341,17 @@ export default function App() {
     }
 
     const manifestData = {
-      name: "Buttery Loyalty Club",
-      short_name: "Buttery Loyalty",
-      description: "Tarjeta de fidelidad digital para Buttery Club Polanco",
+      name: "Buttery Loyalty",
+      short_name: "Buttery",
+      description: "Planilla de sellos digital para Buttery, Polanco CDMX",
       start_url: "/",
       display: "standalone",
       background_color: brandBg || "#FAF7F2",
-      theme_color: brandGold || "#C5A059",
+      theme_color: "#FAF7F2",
       orientation: "portrait",
       icons: [
         {
-          src: logoUrl || "/buttery_logo.svg",
+          src: logoUrl || butteryLogoGold,
           sizes: "any",
           type: logoUrl && logoUrl.startsWith('data:image/svg+xml') ? "image/svg+xml" : (logoUrl && logoUrl.startsWith('data:image/png') ? "image/png" : "image/svg+xml"),
           purpose: "any maskable"
@@ -376,7 +371,22 @@ export default function App() {
       appleTouchLink.setAttribute('rel', 'apple-touch-icon');
       document.head.appendChild(appleTouchLink);
     }
-    appleTouchLink.setAttribute('href', logoUrl || "/buttery_logo.svg");
+    appleTouchLink.setAttribute('href', logoUrl || butteryLogoGold);
+
+    // Set the browser theme-color meta tag (colors the iOS Safari status bar /
+    // overscroll area). Keep it neutral off-white so pulling past the page edge
+    // never reveals the old green.
+    let themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (!themeColorMeta) {
+      themeColorMeta = document.createElement('meta');
+      themeColorMeta.setAttribute('name', 'theme-color');
+      document.head.appendChild(themeColorMeta);
+    }
+    themeColorMeta.setAttribute('content', '#FAF7F2');
+
+    // Ensure the root document background (revealed by overscroll bounce) is neutral.
+    document.documentElement.style.backgroundColor = '#FAF7F2';
+    document.body.style.backgroundColor = '#FAF7F2';
 
     return () => {
       URL.revokeObjectURL(manifestURL);
@@ -542,7 +552,7 @@ export default function App() {
       userName: newUser.name,
       points: 1,
       type: 'earn',
-      description: 'Sello de Bienvenida Buttery Club Polanco',
+      description: 'Sello de bienvenida · Buttery Polanco',
       timestamp: new Date().toISOString()
     };
     setTransactions(prev => [...prev, welcomeTx]);
@@ -580,6 +590,80 @@ export default function App() {
     setPasswordInput('');
     setConfirmPasswordInput('');
     setIsRegistering(false);
+  };
+
+  // Register a new staff member (called from the PIN-gated settings "Equipo" section).
+  // Supports both individual accounts and a shared account — the supervisor just
+  // provides a name, email, and password. Returns an error string on failure, or
+  // null on success, so the settings UI can show inline feedback.
+  const handleRegisterStaff = (name: string, email: string, password: string): string | null => {
+    const cleanName = name.trim();
+    const emailLower = email.trim().toLowerCase();
+
+    if (!cleanName) return 'Ingresa un nombre para el miembro del staff.';
+    if (!emailLower || !emailLower.includes('@')) return 'Ingresa un correo electrónico válido.';
+    if (password.length < 4) return 'La contraseña debe tener al menos 4 caracteres.';
+
+    // If the email already exists as staff, treat it as updating the shared password
+    // rather than erroring — this makes the "one shared email all use" flow natural.
+    const existing = users.find(u => u.email === emailLower);
+    if (existing) {
+      if (existing.role !== 'staff') {
+        return 'Ese correo ya está registrado como socio (cliente).';
+      }
+      // Update the shared/existing staff password
+      const updatedUsers = users.map(u =>
+        u.id === existing.id ? { ...u, name: cleanName, password } : u
+      );
+      setUsers(updatedUsers);
+
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('profiles').update({ name: cleanName, password }).eq('id', existing.id)
+          .then(({ error }) => { if (error) console.error('Supabase Error update staff:', error); });
+      }
+      return null;
+    }
+
+    // Create a brand-new staff account
+    const newStaff: User = {
+      id: `s_${Date.now()}`,
+      name: cleanName,
+      email: emailLower,
+      role: 'staff',
+      points: 0,
+      qrCode: `BUTTERY-STAFF-${Math.floor(1000 + Math.random() * 9000)}`,
+      createdAt: new Date().toISOString(),
+      password
+    };
+
+    setUsers(prev => [...prev, newStaff]);
+
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('profiles').insert([{
+        id: newStaff.id,
+        name: newStaff.name,
+        email: newStaff.email,
+        role: newStaff.role,
+        points: newStaff.points,
+        qr_code: newStaff.qrCode,
+        created_at: newStaff.createdAt,
+        password: newStaff.password
+      }]).then(({ error }) => { if (error) console.error('Supabase Error insert staff:', error); });
+    }
+
+    return null;
+  };
+
+  // Remove a staff member (supervisor action from the "Equipo" section).
+  const handleRemoveStaff = (staffId: string) => {
+    // Never allow removing the currently logged-in supervisor.
+    if (currentUser && currentUser.id === staffId) return;
+    setUsers(prev => prev.filter(u => u.id !== staffId));
+
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('profiles').delete().eq('id', staffId)
+        .then(({ error }) => { if (error) console.error('Supabase Error delete staff:', error); });
+    }
   };
 
   // Points Add (for Staff scans)
@@ -946,6 +1030,17 @@ export default function App() {
     }
   };
 
+  // Toggle helper for the Iniciar sesión / Registrarse tabs
+  const switchAuthTab = (registering: boolean) => {
+    setIsRegistering(registering);
+    setAuthError(null);
+    setNameInput('');
+    setEmailInput('');
+    setPasswordInput('');
+    setConfirmPasswordInput('');
+    setShowPassword(false);
+  };
+
   // Helper arrays for simulator to run in QR camera scanner modal
   const simulatedClientQRs = users
     .filter(u => u.role === 'client')
@@ -953,9 +1048,21 @@ export default function App() {
 
   const activeVouchers = vouchers.filter(v => !v.isUsed);
 
+  // Shared brand logo — Buttery gold script wordmark.
+  // Transparent PNG, so it sits on the cream form panel and the photo hero alike.
+  // Place the file at src/assets/buttery_logo_gold.png
+  const BrandLogo = () => (
+    <img
+      src={butteryLogoGold}
+      alt="Buttery"
+      className="h-10 md:h-12 w-auto object-contain select-none"
+      draggable={false}
+    />
+  );
+
   return (
-      <div className={`font-sans selection:bg-amber-100 selection:text-amber-900 min-h-screen flex flex-col ${
-        currentUser?.role === 'client' ? 'bg-[#4A6B4A] items-center justify-start' : ''
+      <div className={`font-sans selection:bg-[#EDE6DA] selection:text-[#1C2117] min-h-screen flex flex-col ${
+        currentUser?.role === 'client' ? 'bg-[#FAF7F2] items-center justify-start' : ''
       }`}>
       
       {/* Toast Notification message */}
@@ -967,16 +1074,16 @@ export default function App() {
             successToast.type === 'error'
               ? 'bg-rose-600 border-rose-500/30 text-white'
               : successToast.type === 'info'
-                ? 'bg-[#2D241E] border-white/10 text-white'
-                : 'bg-[#4A6B4A] border-white/10 text-white'
+                ? 'bg-[#1C2117] border-white/10 text-white'
+                : 'bg-[#2D4A2E] border-white/10 text-white'
           }`}
         >
           {successToast.type === 'error' ? (
             <AlertCircle className="w-4 h-4 text-white/80 flex-shrink-0" />
           ) : successToast.type === 'info' ? (
-            <Info className="w-4 h-4 text-[#C5A059] flex-shrink-0" />
+            <Info className="w-4 h-4 text-white/80 flex-shrink-0" />
           ) : (
-            <CheckCircle className="w-4 h-4 text-[#C5A059] flex-shrink-0" />
+            <CheckCircle className="w-4 h-4 text-white/80 flex-shrink-0" />
           )}
           <span className="font-sans text-xs font-semibold tracking-wide">{successToast.message}</span>
         </div>
@@ -1032,123 +1139,131 @@ export default function App() {
                 logoHeight={logoHeight}
                 cardBgUrl={cardBgUrl}
                 onUpdateSettings={handleUpdateSettings}
+                onRegisterStaff={handleRegisterStaff}
+                onRemoveStaff={handleRemoveStaff}
               />
             )
           ) : (
-            /* LOGIN & ACCOUNT PORTAL SCREENS */
-            <div className="flex-1 flex flex-col md:flex-row min-h-screen">
+            /* ══════════════════════════════════════════════════════════
+               LOGIN & ACCOUNT PORTAL — Buttery warm editorial design
+               Mobile: single cream column. Desktop: storefront photo + form.
+               ══════════════════════════════════════════════════════════ */
+            <div className="flex-1 flex min-h-screen bg-[#FAF7F2]">
 
-              {/* ── LEFT / TOP PANEL: Dark green brand panel ── */}
-              <div className="relative flex flex-col overflow-hidden md:w-[340px] md:min-h-full md:flex-shrink-0 min-h-[260px]"
-                style={{ background: 'linear-gradient(175deg, #6B8F6B 0%, #4A6B4A 55%, #3D5C3D 100%)' }}>
+              {/* ── LEFT PANEL (desktop only): storefront photo hero ── */}
+              <div className="hidden md:flex md:w-1/2 relative flex-col justify-between p-12 lg:p-16 overflow-hidden">
+                {/* Storefront photograph */}
+                <img
+                  src={butteryStorefront}
+                  alt="Buttery Polanco"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  draggable={false}
+                />
+                {/* Warm dark scrim so the type stays legible */}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#1C2117]/75 via-[#1C2117]/60 to-[#1C2117]/85" />
 
-                {/* Logo + location */}
-                <div className="relative z-10 px-8 pt-10 pb-0 flex flex-col items-center text-center">
-                  <img
-                    src="/buttery-logo-transparent.png"
-                    alt="Buttery"
-                    className="w-44 object-contain select-none"
-                    style={{ mixBlendMode: 'multiply' }}
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="flex items-center justify-center gap-2 mt-4">
-                    <div className="h-px w-6 bg-[#C5A059]" />
-                    <p className="font-sans text-[9px] tracking-[0.22em] text-[#C5A059] font-bold uppercase">
-                      Polanco · Ciudad de México
+                {/* Top: logo */}
+                <div className="relative z-10">
+                  <BrandLogo />
+                </div>
+
+                {/* Middle: hero copy */}
+                <div className="relative z-10 max-w-md">
+                  <p className="font-sans text-[10px] font-bold uppercase tracking-[0.35em] text-[#D9C08A] mb-7">
+                    Repostería &middot; Café de especialidad
+                  </p>
+                  <h1 className="font-serif font-medium text-5xl lg:text-6xl leading-[1.1] text-[#FAF7F2]">
+                    Hornear.<br />
+                    Compartir.<br />
+                    Volver.
+                  </h1>
+                  <p className="font-sans text-sm text-[#FAF7F2]/70 mt-7 leading-relaxed max-w-sm">
+                    Acumula un sello en cada visita y disfruta tu repostería
+                    de cortesía. Tu planilla, siempre en tu bolsillo.
+                  </p>
+
+                  {/* Reward highlight */}
+                  <div className="mt-10 border-l-2 border-[#C5A059] pl-5">
+                    <p className="font-sans text-[9px] font-bold uppercase tracking-[0.3em] text-[#D9C08A] mb-2">
+                      Tu recompensa
                     </p>
-                    <div className="h-px w-6 bg-[#C5A059]" />
-                  </div>
-                </div>
-
-                {/* Stamp preview + reward badge — desktop only (hidden on mobile to save space) */}
-                <div className="hidden md:flex flex-col gap-5 relative z-10 px-8 mt-auto pb-10">
-                  <div>
-                    <p className="font-sans text-[8px] font-extrabold uppercase tracking-[0.2em] text-white/40 mb-3">
-                      Tu planilla de sellos
+                    <p className="font-serif text-xl text-[#FAF7F2]">
+                      Repostería o café de cortesía
                     </p>
-                    <div className="grid grid-cols-5 gap-2">
-                      {Array.from({ length: 10 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
-                            i < 3
-                              ? 'border-[#C5A059] bg-[#C5A059]/20'
-                              : 'border-white/20 bg-white/5'
-                          }`}
-                        >
-                          <Coffee className={`w-4 h-4 ${i < 3 ? 'text-[#C5A059]' : 'text-white/25'}`} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Reward badge */}
-                  <div className="bg-[#3D5C3D] border border-[#C5A059]/20 rounded-2xl p-4 flex items-start gap-3">
-                    <Gift className="w-5 h-5 text-[#C5A059] flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-sans text-[11px] font-bold text-white leading-snug">¡Tu recompensa espera!</p>
-                      <p className="font-sans text-[10px] text-white/50 mt-0.5 leading-relaxed">
-                        Pieza artesanal o café de cortesía con 10 visitas.
-                      </p>
-                    </div>
+                    <p className="font-sans text-xs text-[#FAF7F2]/60 mt-1">
+                      Al completar 10 sellos
+                    </p>
                   </div>
                 </div>
 
-                {/* Mobile: stamp row (compact) */}
-                <div className="flex md:hidden items-center gap-1.5 px-8 mt-4 pb-6 relative z-10">
-                  <div className="flex gap-1.5 mr-2">
-                    {Array.from({ length: 10 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={`w-6 h-6 rounded-full border flex items-center justify-center ${
-                          i < 3
-                            ? 'border-[#C5A059] bg-[#C5A059]/20'
-                            : 'border-white/25 bg-white/5'
-                        }`}
-                      >
-                        <Coffee className={`w-3 h-3 ${i < 3 ? 'text-[#C5A059]' : 'text-white/20'}`} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Mobile reward pill */}
-                <div className="flex md:hidden px-8 pb-8 relative z-10">
-                  <div className="bg-[#3D5C3D]/80 border border-[#C5A059]/30 rounded-full px-3 py-1.5 flex items-center gap-2">
-                    <Gift className="w-3.5 h-3.5 text-[#C5A059]" />
-                    <p className="font-sans text-[10px] font-bold text-white">¡Tu recompensa espera!</p>
-                  </div>
-                </div>
-
-                {/* Curved bottom divider on mobile */}
-                <div className="absolute bottom-0 left-0 right-0 h-8 bg-brand-bg md:hidden"
-                  style={{ borderRadius: '50% 50% 0 0 / 100% 100% 0 0' }} />
+                {/* Bottom: footer */}
+                <p className="relative z-10 font-sans text-[9px] font-bold uppercase tracking-[0.3em] text-[#FAF7F2]/50">
+                  Polanco &middot; Ciudad de México
+                </p>
               </div>
 
-              {/* ── RIGHT / BOTTOM PANEL: Cream form panel ── */}
-              <div className="flex-1 bg-[#FAF7F2] flex flex-col justify-center px-8 py-10 md:px-14 md:py-0">
-                <div className="w-full max-w-sm mx-auto space-y-7">
+              {/* ── RIGHT PANEL / MOBILE FULL SCREEN: cream form ── */}
+              <div className="flex-1 flex flex-col justify-center px-7 py-12 md:px-14 lg:px-20 bg-[#FAF7F2]">
+                <div className="w-full max-w-md mx-auto md:mx-0">
+
+                  {/* Mobile-only logo (desktop shows it in the hero panel) */}
+                  <div className="md:hidden mb-8">
+                    <BrandLogo />
+                  </div>
 
                   {/* Heading */}
-                  <div>
-                    <h2 className="font-serif font-bold text-3xl text-[#2D241E] leading-tight text-balance">
+                  <div className="mb-8">
+                    <p className="font-sans text-[10px] font-bold uppercase tracking-[0.3em] text-[#1C2117]/55">
+                      Polanco &middot; CDMX
+                    </p>
+                    <h2 className="font-serif font-medium text-[2.5rem] md:text-5xl text-[#1C2117] leading-[1.1] mt-4">
                       {loginRole === 'client'
-                        ? (isRegistering ? 'Únete al Club' : 'Bienvenido de nuevo')
+                        ? (isRegistering ? 'Únete al club' : 'Bienvenido de nuevo')
                         : 'Acceso Staff'
                       }
                     </h2>
-                    <p className="font-sans text-xs text-[#2D241E]/50 mt-2 leading-relaxed">
+                    <p className="font-sans text-sm text-[#1C2117]/60 mt-3 leading-relaxed">
                       {loginRole === 'client'
                         ? (isRegistering
-                            ? 'Regístrate hoy y recibe un obsequio especial de bienvenida.'
+                            ? 'Regístrate hoy y estrena tu planilla con un sello de bienvenida.'
                             : 'Inicia sesión para ver tu planilla y canjear tus visitas.')
-                        : 'Consola interna exclusiva para baristas y personal de servicio.'
+                        : 'Consola interna exclusiva para el personal de Buttery.'
                       }
                     </p>
                   </div>
 
+                  {/* Segmented tab toggle (clients only) */}
+                  {loginRole === 'client' && (
+                    <div className="bg-[#EDE6DA] rounded-full p-1 flex mb-7">
+                      <button
+                        type="button"
+                        id="tab-login"
+                        onClick={() => switchAuthTab(false)}
+                        className={`flex-1 py-2.5 rounded-full font-sans text-sm font-semibold transition-all cursor-pointer ${
+                          !isRegistering
+                            ? 'bg-[#FDFBF7] text-[#1C2117] shadow-sm'
+                            : 'bg-transparent text-[#1C2117]/50 hover:text-[#1C2117]/75'
+                        }`}
+                      >
+                        Iniciar sesión
+                      </button>
+                      <button
+                        type="button"
+                        id="tab-register"
+                        onClick={() => switchAuthTab(true)}
+                        className={`flex-1 py-2.5 rounded-full font-sans text-sm font-semibold transition-all cursor-pointer ${
+                          isRegistering
+                            ? 'bg-[#FDFBF7] text-[#1C2117] shadow-sm'
+                            : 'bg-transparent text-[#1C2117]/50 hover:text-[#1C2117]/75'
+                        }`}
+                      >
+                        Registrarse
+                      </button>
+                    </div>
+                  )}
+
                   {authError && (
-                    <div className="bg-red-50 border border-red-200 p-3 rounded-xl text-red-700 text-xs text-center font-serif italic">
+                    <div className="bg-[#FBEDEA] border border-[#D9A196] p-3 rounded-xl text-[#8C3A28] text-xs text-center font-sans mb-5">
                       {authError}
                     </div>
                   )}
@@ -1158,51 +1273,48 @@ export default function App() {
                     <form onSubmit={handleLogin} className="space-y-5">
 
                       {/* Email */}
-                      <div className="space-y-1.5">
-                        <label className="font-sans text-[9px] font-extrabold uppercase tracking-[0.18em] text-[#2D241E]/50">
-                          Correo Electrónico
+                      <div className="space-y-2">
+                        <label htmlFor="login-email" className="font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-[#1C2117]/65">
+                          Correo electrónico
                         </label>
-                        <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2D241E]/30" />
-                          <input
-                            id="login-email"
-                            type="email"
-                            placeholder={loginRole === 'client' ? 'ejemplo@correo.com' : 'staff@buttery.mx'}
-                            value={emailInput}
-                            onChange={(e) => setEmailInput(e.target.value)}
-                            required
-                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#4A6B4A] transition-colors shadow-sm"
-                          />
-                        </div>
+                        <input
+                          id="login-email"
+                          type="email"
+                          placeholder="ejemplo@correo.com"
+                          value={emailInput}
+                          onChange={(e) => setEmailInput(e.target.value)}
+                          required
+                          className="w-full bg-[#FDFBF7] border border-[#1C2117]/12 rounded-2xl py-4 px-5 text-sm text-[#1C2117] placeholder:text-[#1C2117]/35 focus:outline-none focus:border-[#C5A059] transition-colors shadow-sm"
+                        />
                       </div>
 
                       {/* Password */}
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <label className="font-sans text-[9px] font-extrabold uppercase tracking-[0.18em] text-[#2D241E]/50">
+                          <label htmlFor="login-password" className="font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-[#1C2117]/65">
                             Contraseña
                           </label>
                           {loginRole === 'client' && (
-                            <span className="font-sans text-[9px] font-semibold text-[#C5A059] cursor-pointer hover:underline">
+                            <span className="font-sans text-xs font-semibold text-[#B08D4F] cursor-pointer hover:underline transition-colors">
                               ¿Olvidaste tu contraseña?
                             </span>
                           )}
                         </div>
                         <div className="relative">
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2D241E]/30" />
                           <input
                             id="login-password"
                             type={showPassword ? 'text' : 'password'}
-                            placeholder="••••••••"
+                            placeholder="Tu contraseña"
                             value={passwordInput}
                             onChange={(e) => setPasswordInput(e.target.value)}
                             required
-                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 pl-11 pr-12 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#4A6B4A] transition-colors shadow-sm tracking-widest"
+                            className="w-full bg-[#FDFBF7] border border-[#1C2117]/12 rounded-2xl py-4 pl-5 pr-12 text-sm text-[#1C2117] placeholder:text-[#1C2117]/35 focus:outline-none focus:border-[#C5A059] transition-colors shadow-sm"
                           />
                           <button
                             type="button"
+                            aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#2D241E]/30 hover:text-[#2D241E]/60 transition-colors cursor-pointer"
+                            className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1C2117]/35 hover:text-[#1C2117]/70 transition-colors cursor-pointer"
                           >
                             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
@@ -1213,101 +1325,153 @@ export default function App() {
                       <button
                         type="submit"
                         id="login-submit-btn"
-                        className="w-full bg-[#4A6B4A] hover:bg-[#3D5C3D] text-white py-4 rounded-2xl font-sans font-bold uppercase tracking-[0.22em] text-xs transition-colors flex items-center justify-center gap-2 group cursor-pointer shadow-md mt-2"
+                        className="w-full bg-[#2D4A2E] hover:bg-[#243B25] text-[#FAF7F2] py-4 rounded-2xl font-sans font-bold uppercase tracking-[0.22em] text-xs transition-colors flex items-center justify-center gap-2.5 group cursor-pointer shadow-sm mt-1"
                       >
                         <span>Iniciar Sesión</span>
-                        <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                       </button>
+
+                      {loginRole === 'client' && (
+                        <>
+                          {/* Register prompt */}
+                          <p className="text-center font-sans text-sm text-[#1C2117]/60 pt-1">
+                            ¿Aún no eres miembro?{' '}
+                            <button
+                              type="button"
+                              id="toggle-register-btn"
+                              onClick={() => switchAuthTab(true)}
+                              className="font-bold text-[#1C2117] underline underline-offset-2 hover:text-[#2D4A2E] cursor-pointer transition-colors"
+                            >
+                              Regístrate aquí
+                            </button>
+                          </p>
+
+                          {/* Divider */}
+                          <div className="flex items-center gap-4 py-1">
+                            <div className="h-px flex-1 bg-[#1C2117]/12" />
+                            <span className="font-sans text-xs text-[#1C2117]/40 font-medium">O</span>
+                            <div className="h-px flex-1 bg-[#1C2117]/12" />
+                          </div>
+
+                          {/* Ver mi planilla */}
+                          <button
+                            type="button"
+                            id="view-card-btn"
+                            onClick={() => showToast('Inicia sesión con tu cuenta para abrir tu planilla digital.', 'info')}
+                            className="w-full bg-[#FDFBF7] border border-[#1C2117]/12 hover:border-[#C5A059] text-[#1C2117] py-4 rounded-2xl font-sans font-semibold text-sm transition-colors flex items-center justify-center gap-2.5 cursor-pointer shadow-sm"
+                          >
+                            <Check className="w-4 h-4 text-[#B08D4F]" strokeWidth={2.5} />
+                            <span>Ver mi planilla</span>
+                          </button>
+
+                          {/* Terms footer */}
+                          <p className="text-center font-sans text-xs text-[#1C2117]/50 pt-3 leading-relaxed">
+                            Al continuar aceptas nuestros{' '}
+                            <span className="underline underline-offset-2 cursor-pointer hover:text-[#1C2117] transition-colors">Términos</span>
+                            {' '}y{' '}
+                            <span className="underline underline-offset-2 cursor-pointer hover:text-[#1C2117] transition-colors">Política de Privacidad</span>.
+                          </p>
+                        </>
+                      )}
                     </form>
                   ) : (
                     /* REGISTRATION FORM */
-                    <form onSubmit={handleSignUp} className="space-y-4">
-                      <div className="space-y-1.5">
-                        <label className="font-sans text-[9px] font-extrabold uppercase tracking-[0.18em] text-[#2D241E]/50">Nombre Completo</label>
-                        <div className="relative">
-                          <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2D241E]/30" />
-                          <input
-                            id="register-name"
-                            type="text"
-                            placeholder="Tu primer nombre y apellido"
-                            value={nameInput}
-                            onChange={(e) => setNameInput(e.target.value)}
-                            required
-                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#4A6B4A] transition-colors shadow-sm"
-                          />
-                        </div>
+                    <form onSubmit={handleSignUp} className="space-y-5">
+                      <div className="space-y-2">
+                        <label htmlFor="register-name" className="font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-[#1C2117]/65">
+                          Nombre completo
+                        </label>
+                        <input
+                          id="register-name"
+                          type="text"
+                          placeholder="Tu nombre y apellido"
+                          value={nameInput}
+                          onChange={(e) => setNameInput(e.target.value)}
+                          required
+                          className="w-full bg-[#FDFBF7] border border-[#1C2117]/12 rounded-2xl py-4 px-5 text-sm text-[#1C2117] placeholder:text-[#1C2117]/35 focus:outline-none focus:border-[#C5A059] transition-colors shadow-sm"
+                        />
                       </div>
 
-                      <div className="space-y-1.5">
-                        <label className="font-sans text-[9px] font-extrabold uppercase tracking-[0.18em] text-[#2D241E]/50">Correo Electrónico</label>
-                        <div className="relative">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2D241E]/30" />
-                          <input
-                            id="register-email"
-                            type="email"
-                            placeholder="ejemplo@correo.com"
-                            value={emailInput}
-                            onChange={(e) => setEmailInput(e.target.value)}
-                            required
-                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#4A6B4A] transition-colors shadow-sm"
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <label htmlFor="register-email" className="font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-[#1C2117]/65">
+                          Correo electrónico
+                        </label>
+                        <input
+                          id="register-email"
+                          type="email"
+                          placeholder="ejemplo@correo.com"
+                          value={emailInput}
+                          onChange={(e) => setEmailInput(e.target.value)}
+                          required
+                          className="w-full bg-[#FDFBF7] border border-[#1C2117]/12 rounded-2xl py-4 px-5 text-sm text-[#1C2117] placeholder:text-[#1C2117]/35 focus:outline-none focus:border-[#C5A059] transition-colors shadow-sm"
+                        />
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <label className="font-sans text-[9px] font-extrabold uppercase tracking-[0.18em] text-[#2D241E]/50">Contraseña</label>
+                        <div className="space-y-2">
+                          <label htmlFor="register-password" className="font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-[#1C2117]/65">
+                            Contraseña
+                          </label>
                           <input
                             id="register-password"
                             type="password"
-                            placeholder="Min 4 car."
+                            placeholder="Mín. 4 car."
                             value={passwordInput}
                             onChange={(e) => setPasswordInput(e.target.value)}
                             required
-                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 px-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#4A6B4A] transition-colors shadow-sm tracking-widest"
+                            className="w-full bg-[#FDFBF7] border border-[#1C2117]/12 rounded-2xl py-4 px-5 text-sm text-[#1C2117] placeholder:text-[#1C2117]/35 focus:outline-none focus:border-[#C5A059] transition-colors shadow-sm"
                           />
                         </div>
-                        <div className="space-y-1.5">
-                          <label className="font-sans text-[9px] font-extrabold uppercase tracking-[0.18em] text-[#2D241E]/50">Confirmar</label>
+                        <div className="space-y-2">
+                          <label htmlFor="register-confirm-password" className="font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-[#1C2117]/65">
+                            Confirmar
+                          </label>
                           <input
                             id="register-confirm-password"
                             type="password"
-                            placeholder="Repite pass"
+                            placeholder="Repite"
                             value={confirmPasswordInput}
                             onChange={(e) => setConfirmPasswordInput(e.target.value)}
                             required
-                            className="w-full bg-white border border-[#2D241E]/12 rounded-2xl py-3.5 px-4 text-sm text-[#2D241E] placeholder:text-[#2D241E]/30 focus:outline-none focus:border-[#4A6B4A] transition-colors shadow-sm tracking-widest"
+                            className="w-full bg-[#FDFBF7] border border-[#1C2117]/12 rounded-2xl py-4 px-5 text-sm text-[#1C2117] placeholder:text-[#1C2117]/35 focus:outline-none focus:border-[#C5A059] transition-colors shadow-sm"
                           />
                         </div>
                       </div>
 
-                      <p className="text-[10px] font-sans text-[#C5A059] font-bold bg-[#C5A059]/10 border border-[#C5A059]/20 rounded-xl p-3 flex items-center justify-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        Regalo de apertura: ¡puntos de bienvenida!
+                      <p className="font-sans text-xs text-[#8A6D3B] font-semibold bg-[#F6EEDF] border border-[#C5A059]/30 rounded-2xl p-3.5 flex items-center justify-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
+                        Sello de bienvenida: ¡tu primera visita registrada!
                       </p>
 
                       <button
                         type="submit"
                         id="register-submit-btn"
-                        className="w-full bg-[#4A6B4A] hover:bg-[#3D5C3D] text-white py-4 rounded-2xl font-sans font-bold uppercase tracking-[0.22em] text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                        className="w-full bg-[#2D4A2E] hover:bg-[#243B25] text-[#FAF7F2] py-4 rounded-2xl font-sans font-bold uppercase tracking-[0.22em] text-xs transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-2.5 group"
                       >
-                        Registrarme y Recibir Puntos
+                        <span>Registrarme y Empezar</span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                       </button>
-                    </form>
-                  )}
 
-                  {/* Register / Login toggle */}
-                  {loginRole === 'client' && (
-                    <p className="text-center font-sans text-xs text-[#2D241E]/50">
-                      {isRegistering ? '¿Ya eres miembro? ' : '¿Aún no eres miembro? '}
-                      <button
-                        id="toggle-register-btn"
-                        onClick={() => { setIsRegistering(!isRegistering); setAuthError(null); }}
-                        className="font-bold text-[#2D241E] hover:underline cursor-pointer"
-                      >
-                        {isRegistering ? 'Inicia Sesión' : 'Regístrate aquí'}
-                      </button>
-                    </p>
+                      {/* Login prompt */}
+                      <p className="text-center font-sans text-sm text-[#1C2117]/60">
+                        ¿Ya eres miembro?{' '}
+                        <button
+                          type="button"
+                          onClick={() => switchAuthTab(false)}
+                          className="font-bold text-[#1C2117] underline underline-offset-2 hover:text-[#2D4A2E] cursor-pointer transition-colors"
+                        >
+                          Inicia sesión
+                        </button>
+                      </p>
+
+                      {/* Terms footer */}
+                      <p className="text-center font-sans text-xs text-[#1C2117]/50 pt-1 leading-relaxed">
+                        Al continuar aceptas nuestros{' '}
+                        <span className="underline underline-offset-2 cursor-pointer hover:text-[#1C2117] transition-colors">Términos</span>
+                        {' '}y{' '}
+                        <span className="underline underline-offset-2 cursor-pointer hover:text-[#1C2117] transition-colors">Política de Privacidad</span>.
+                      </p>
+                    </form>
                   )}
 
                 </div>
