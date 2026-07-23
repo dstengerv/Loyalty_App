@@ -36,14 +36,11 @@ interface StaffDashboardProps {
   onLogout: () => void;
   onResetClientStamps?: (userQrCode: string) => void;
   stampSymbol: string;
-  brandBrown: string;
-  brandGold: string;
-  brandBg: string;
   settingsPin: string;
   logoUrl: string;
   logoHeight: number;
   cardBgUrl: string;
-  onUpdateSettings: (stamp: string, brown: string, gold: string, bg: string, newPin: string, logoUrl: string, logoHeight: number, cardBgUrl: string) => void;
+  onUpdateSettings: (stamp: string, newPin: string, logoUrl: string, logoHeight: number, cardBgUrl: string) => void;
   onRegisterStaff?: (name: string, email: string, password: string) => string | null;
   onRemoveStaff?: (staffId: string) => void;
 }
@@ -70,9 +67,6 @@ export default function StaffDashboard({
   onLogout,
   onResetClientStamps,
   stampSymbol,
-  brandBrown,
-  brandGold,
-  brandBg,
   settingsPin,
   logoUrl,
   logoHeight,
@@ -90,9 +84,6 @@ export default function StaffDashboard({
   const [pinError, setPinError] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [tempStamp, setTempStamp] = useState<string>(stampSymbol);
-  const [tempBrown, setTempBrown] = useState<string>(brandBrown);
-  const [tempGold, setTempGold] = useState<string>(brandGold);
-  const [tempBg, setTempBg] = useState<string>(brandBg);
   const [tempPin, setTempPin] = useState<string>(settingsPin);
   const [tempLogoUrl, setTempLogoUrl] = useState<string>(logoUrl);
   const [tempLogoHeight, setTempLogoHeight] = useState<number>(logoHeight);
@@ -121,23 +112,7 @@ export default function StaffDashboard({
     setTimeout(() => setStaffFormSuccess(null), 3500);
   };
 
-  const THEME_PRESETS = [
-    { name: 'Buttery (Verde & Oro)', brown: '#1C2117', gold: '#C5A059', bg: '#FAF7F2' },
-    { name: 'Pan Tostado (Café & Ámbar)', brown: '#2D241E', gold: '#C08A4A', bg: '#FAF6F0' },
-    { name: 'Matcha (Verde & Oliva)', brown: '#142E25', gold: '#7A8C40', bg: '#F2F6F3' },
-    { name: 'Cereza (Burdeos & Oro Rosa)', brown: '#3E1929', gold: '#D0887A', bg: '#FAF2F4' },
-    { name: 'Carbón (Elegante)', brown: '#121212', gold: '#B08E5F', bg: '#F5F5F5' },
-  ];
 
-  const STAMP_PRESETS = [
-    { char: '🥐', name: 'Croissant' },
-    { char: '☕', name: 'Cafe' },
-    { char: '🍪', name: 'Galleta' },
-    { char: '🧁', name: 'Cupcake' },
-    { char: '🍩', name: 'Dona' },
-    { char: '🥯', name: 'Bagel' },
-    { char: '⭐', name: 'Estrella' },
-  ];
 
   const handlePinKeypadPress = (val: string) => {
     if (enteredPin.length >= 4) return;
@@ -152,9 +127,6 @@ export default function StaffDashboard({
         setIsSettingsOpen(true);
         // Sync values to existing state on open
         setTempStamp(stampSymbol);
-        setTempBrown(brandBrown);
-        setTempGold(brandGold);
-        setTempBg(brandBg);
         setTempPin(settingsPin);
         setTempLogoUrl(logoUrl);
         setTempLogoHeight(logoHeight);
@@ -929,39 +901,14 @@ export default function StaffDashboard({
                   Símbolo del sello
                 </h2>
                 <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[140px] pt-1.5">
-                  Se muestra en la tarjeta del socio
+                  Reemplaza la palomita en los sellos llenos
                 </p>
-              </div>
-
-              <div className="grid grid-cols-4 gap-3 mt-6">
-                {STAMP_PRESETS.map((p) => {
-                  const isSelected = tempStamp === p.char;
-                  return (
-                    <button
-                      key={p.char}
-                      id={`preset-stamp-${p.name.toLowerCase()}`}
-                      onClick={() => setTempStamp(p.char)}
-                      className={`aspect-square rounded-full flex items-center justify-center border transition-all cursor-pointer text-2xl ${
-                        isSelected
-                          ? 'bg-[#1C2117] border-[#1C2117] scale-105'
-                          : 'bg-[#FDFBF7] border-[#1C2117]/12 hover:border-[#1C2117]/35'
-                      }`}
-                      title={p.name}
-                    >
-                      {isSelected ? (
-                        <Check className="w-6 h-6 text-white" strokeWidth={2.5} />
-                      ) : (
-                        <span>{p.char}</span>
-                      )}
-                    </button>
-                  );
-                })}
               </div>
 
               {/* Custom Image Stamp Uploader */}
               <div className="mt-8">
                 <span className="block font-sans text-[9px] font-bold uppercase tracking-[0.2em] text-[#1C2117]/45">
-                  O sube una imagen personalizada
+                  Imagen del sello (opcional)
                 </span>
                 <div className="flex items-center gap-4 mt-4">
                   <div className="w-16 h-16 rounded-full bg-[#FDFBF7] border border-[#1C2117]/12 flex items-center justify-center relative overflow-hidden shrink-0">
@@ -1022,103 +969,17 @@ export default function StaffDashboard({
                         }
                       }}
                     />
-                    <p className="font-sans text-[11px] text-[#1C2117]/45 mt-2">PNG, fondo transparente recomendado</p>
+                    <p className="font-sans text-[11px] text-[#1C2117]/45 mt-2">PNG con fondo transparente. Si lo dejas vacío, se usa una palomita.</p>
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* ── 02 · Theme palette ── */}
+            {/* ── 02 · Brand logo ── */}
             <section className="pt-12">
               <div className="flex items-start justify-between gap-4">
                 <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
                   <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">02</span>
-                  Paleta del club
-                </h2>
-                <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[140px] pt-1.5">
-                  Aplica a botones, sellos y acentos
-                </p>
-              </div>
-
-              <div className="space-y-2.5 mt-6">
-                {THEME_PRESETS.map((p) => {
-                  const isSelected = tempBrown === p.brown && tempGold === p.gold && tempBg === p.bg;
-                  const [title, subtitle] = p.name.split(' (');
-                  return (
-                    <button
-                      key={p.name}
-                      id={`preset-theme-${p.name.replace(/\s+/g, '-').toLowerCase()}`}
-                      onClick={() => {
-                        setTempBrown(p.brown);
-                        setTempGold(p.gold);
-                        setTempBg(p.bg);
-                      }}
-                      className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all cursor-pointer text-left ${
-                        isSelected
-                          ? 'bg-[#FDFBF7] border-[#1C2117] shadow-sm'
-                          : 'bg-[#FDFBF7] border-[#1C2117]/10 hover:border-[#1C2117]/30'
-                      }`}
-                    >
-                      <div>
-                        <span className="font-sans text-sm font-semibold text-[#1C2117] block">{title}</span>
-                        {subtitle && (
-                          <span className="font-sans text-xs text-[#1C2117]/50 block mt-0.5">{subtitle.replace(')', '')}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2.5 shrink-0">
-                        <div className="flex gap-1.5">
-                          <div className="w-5 h-5 rounded-full border border-black/10" style={{ backgroundColor: p.brown }} title="Color de marca" />
-                          <div className="w-5 h-5 rounded-full border border-black/10" style={{ backgroundColor: p.gold }} title="Color acento" />
-                          <div className="w-5 h-5 rounded-full border border-black/10" style={{ backgroundColor: p.bg }} title="Color fondo" />
-                        </div>
-                        {isSelected && <Check className="w-4 h-4 text-[#1C2117] ml-1" strokeWidth={2.5} />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Custom hex */}
-              <div className="mt-8">
-                <span className="block font-sans text-[9px] font-bold uppercase tracking-[0.2em] text-[#1C2117]/45">
-                  O ingresa tus propios códigos (HEX)
-                </span>
-                <div className="grid grid-cols-3 gap-3 mt-4">
-                  {([
-                    { label: 'Marca', value: tempBrown, set: setTempBrown, fallback: '#1C2117' },
-                    { label: 'Acento', value: tempGold, set: setTempGold, fallback: '#C5A059' },
-                    { label: 'Fondo', value: tempBg, set: setTempBg, fallback: '#FAF7F2' },
-                  ] as const).map((c) => (
-                    <div key={c.label} className="space-y-2">
-                      <label className="block text-[9px] font-sans font-bold uppercase tracking-[0.15em] text-[#1C2117]/45">{c.label}</label>
-                      <div className="flex items-center gap-2 bg-[#FDFBF7] border border-[#1C2117]/12 rounded-xl px-2.5 py-2">
-                        <div className="relative w-5 h-5 rounded-full border border-[#1C2117]/15 cursor-pointer shrink-0" style={{ backgroundColor: c.value }}>
-                          <input
-                            type="color"
-                            value={c.value.startsWith('#') && c.value.length === 7 ? c.value : c.fallback}
-                            onChange={(e) => c.set(e.target.value)}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          />
-                        </div>
-                        <input
-                          type="text"
-                          maxLength={7}
-                          value={c.value}
-                          onChange={(e) => c.set(e.target.value)}
-                          className="w-full bg-transparent text-[11px] font-mono text-[#1C2117] uppercase focus:outline-none min-w-0"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            {/* ── 03 · Brand logo ── */}
-            <section className="pt-12">
-              <div className="flex items-start justify-between gap-4">
-                <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
-                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">03</span>
                   Logo de la marca
                 </h2>
                 <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[150px] pt-1.5">
@@ -1220,11 +1081,11 @@ export default function StaffDashboard({
               </div>
             </section>
 
-            {/* ── 04 · Card image ── */}
+            {/* ── 03 · Card image ── */}
             <section className="pt-12">
               <div className="flex items-start justify-between gap-4">
                 <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
-                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">04</span>
+                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">03</span>
                   Imagen de la tarjeta
                 </h2>
                 <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[150px] pt-1.5">
@@ -1261,11 +1122,11 @@ export default function StaffDashboard({
               </div>
             </section>
 
-            {/* ── 05 · PIN ── */}
+            {/* ── 04 · PIN ── */}
             <section className="pt-12">
               <div className="flex items-start justify-between gap-4">
                 <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
-                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">05</span>
+                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">04</span>
                   PIN de configuración
                 </h2>
                 <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[140px] pt-1.5">
@@ -1289,11 +1150,11 @@ export default function StaffDashboard({
               <p className="font-sans text-[11px] text-[#1C2117]/40 mt-2">4 dígitos numéricos</p>
             </section>
 
-            {/* ── 06 · Equipo (staff accounts) ── */}
+            {/* ── 05 · Equipo (staff accounts) ── */}
             <section className="pt-12">
               <div className="flex items-start justify-between gap-4">
                 <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
-                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">06</span>
+                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">05</span>
                   Equipo
                 </h2>
                 <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[150px] pt-1.5">
@@ -1442,7 +1303,7 @@ export default function StaffDashboard({
                 id="settings-btn-save"
                 disabled={tempPin.length !== 4}
                 onClick={() => {
-                  onUpdateSettings(tempStamp, tempBrown, tempGold, tempBg, tempPin, tempLogoUrl, tempLogoHeight, tempCardBgUrl);
+                  onUpdateSettings(tempStamp, tempPin, tempLogoUrl, tempLogoHeight, tempCardBgUrl);
                   setIsSettingsOpen(false);
                   setFeedbackMsg({ text: '¡Configuración de marca actualizada de manera segura!', isError: false });
                   setTimeout(() => setFeedbackMsg(null), 2500);
