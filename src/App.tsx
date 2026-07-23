@@ -225,19 +225,13 @@ export default function App() {
   });
   const [cardBgUrl, setCardBgUrl] = useState<string>(() => localStorage.getItem('buttery_card_bg_url') || 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80');
 
-  const handleUpdateSettings = async (stamp: string, brown: string, gold: string, bg: string, newPin: string, logo: string, height: number, newCardBgUrl: string) => {
+  const handleUpdateSettings = async (stamp: string, newPin: string, logo: string, height: number, newCardBgUrl: string) => {
     setStampSymbol(stamp);
-    setBrandBrown(brown);
-    setBrandGold(gold);
-    setBrandBg(bg);
     setSettingsPin(newPin);
     setLogoUrl(logo);
     setLogoHeight(height);
     setCardBgUrl(newCardBgUrl);
     localStorage.setItem('buttery_stamp_symbol', stamp);
-    localStorage.setItem('buttery_brand_brown', brown);
-    localStorage.setItem('buttery_brand_gold', gold);
-    localStorage.setItem('buttery_brand_bg', bg);
     localStorage.setItem('buttery_settings_pin', newPin);
     localStorage.setItem('buttery_logo_url', logo);
     localStorage.setItem('buttery_logo_height', height.toString());
@@ -250,9 +244,9 @@ export default function App() {
           .upsert({
             id: 'default',
             stamp_symbol: stamp,
-            brand_brown: brown,
-            brand_gold: gold,
-            brand_bg: bg,
+            brand_brown: brandBrown,
+            brand_gold: brandGold,
+            brand_bg: brandBg,
             settings_pin: newPin,
             logo_url: logo,
             logo_height: height,
@@ -1131,9 +1125,6 @@ export default function App() {
                 onLogout={handleLogout}
                 onResetClientStamps={handleResetClientStamps}
                 stampSymbol={stampSymbol}
-                brandBrown={brandBrown}
-                brandGold={brandGold}
-                brandBg={brandBg}
                 settingsPin={settingsPin}
                 logoUrl={logoUrl}
                 logoHeight={logoHeight}
