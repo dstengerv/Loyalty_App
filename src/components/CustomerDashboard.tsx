@@ -293,7 +293,7 @@ export default function CustomerDashboard({
           <img
             src={butteryLogoGold}
             alt="Buttery"
-            className="h-10 w-auto object-contain select-none"
+            className="h-14 w-auto object-contain select-none"
             draggable={false}
           />
 
