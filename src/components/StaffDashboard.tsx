@@ -1,26 +1,29 @@
 import React, { useState } from 'react';
-import { 
-  LogOut, 
-  QrCode, 
-  PlusCircle, 
-  User, 
-  History, 
-  Sparkles, 
-  Check, 
-  DollarSign, 
-  Users, 
-  Video, 
-  Ticket,
+import {
+  LogOut,
+  QrCode,
+  User,
+  Check,
+  Users,
+  Camera,
   Clock,
   Search,
-  Award,
-  Coffee,
   Gift,
   Settings,
   Lock,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  History,
+  ChevronLeft,
+  Upload,
+  RotateCcw,
+  UserPlus,
+  Trash2,
+  Mail,
+  Shield,
 } from 'lucide-react';
 import { User as UserType, Transaction, RewardItem, QRVoucher } from '../types';
+import butteryStorefront from '../assets/buttery_storefront.jpg';
 
 interface StaffDashboardProps {
   staffUser: UserType;
@@ -41,6 +44,19 @@ interface StaffDashboardProps {
   logoHeight: number;
   cardBgUrl: string;
   onUpdateSettings: (stamp: string, brown: string, gold: string, bg: string, newPin: string, logoUrl: string, logoHeight: number, cardBgUrl: string) => void;
+  onRegisterStaff?: (name: string, email: string, password: string) => string | null;
+  onRemoveStaff?: (staffId: string) => void;
+}
+
+// "HACE X DÍAS" helper for last visit labels
+function daysAgoLabel(dateStr?: string): string {
+  if (!dateStr) return 'Sin visitas';
+  const then = new Date(dateStr);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - then.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays <= 0) return 'Hoy';
+  if (diffDays === 1) return 'Ayer';
+  return `Hace ${diffDays} días`;
 }
 
 export default function StaffDashboard({
@@ -62,10 +78,12 @@ export default function StaffDashboard({
   logoHeight,
   cardBgUrl,
   onUpdateSettings,
+  onRegisterStaff,
+  onRemoveStaff,
 }: StaffDashboardProps) {
-  // Tabs: 'control' (point administration) and 'users' (manage customers list)
+  // Tabs: 'control' (check-in / scan) and 'users' (CRM list)
   const [activeTab, setActiveTab] = useState<'control' | 'users'>('control');
-  
+
   // Settings & Security PIN States
   const [isPinModalOpen, setIsPinModalOpen] = useState<boolean>(false);
   const [enteredPin, setEnteredPin] = useState<string>('');
@@ -80,22 +98,45 @@ export default function StaffDashboard({
   const [tempLogoHeight, setTempLogoHeight] = useState<number>(logoHeight);
   const [tempCardBgUrl, setTempCardBgUrl] = useState<string>(cardBgUrl);
 
+  // Staff registration form state (Equipo section)
+  const [newStaffName, setNewStaffName] = useState<string>('');
+  const [newStaffEmail, setNewStaffEmail] = useState<string>('');
+  const [newStaffPassword, setNewStaffPassword] = useState<string>('');
+  const [staffFormError, setStaffFormError] = useState<string | null>(null);
+  const [staffFormSuccess, setStaffFormSuccess] = useState<string | null>(null);
+
+  const handleStaffRegisterSubmit = () => {
+    setStaffFormError(null);
+    setStaffFormSuccess(null);
+    if (!onRegisterStaff) return;
+    const err = onRegisterStaff(newStaffName, newStaffEmail, newStaffPassword);
+    if (err) {
+      setStaffFormError(err);
+      return;
+    }
+    setStaffFormSuccess(`Acceso guardado para ${newStaffEmail.trim().toLowerCase()}.`);
+    setNewStaffName('');
+    setNewStaffEmail('');
+    setNewStaffPassword('');
+    setTimeout(() => setStaffFormSuccess(null), 3500);
+  };
+
   const THEME_PRESETS = [
-    { name: 'Original Buttery (Café & Oro)', brown: '#2D241E', gold: '#C5A059', bg: '#FAF7F2' },
-    { name: 'Matcha Forest (Verde & Oliva)', brown: '#142E25', gold: '#7A8C40', bg: '#F2F6F3' },
-    { name: 'Cereza Intensa (Burgundy & Oro Rosa)', brown: '#3E1929', gold: '#D0887A', bg: '#FAF2F4' },
-    { name: 'Lavanda & Indigo (Suave)', brown: '#1C2541', gold: '#8D99AE', bg: '#F1F3F9' },
-    { name: 'Midnight Charcoal (Elegante)', brown: '#121212', gold: '#B08E5F', bg: '#F5F5F5' },
+    { name: 'Buttery (Verde & Oro)', brown: '#1C2117', gold: '#C5A059', bg: '#FAF7F2' },
+    { name: 'Pan Tostado (Café & Ámbar)', brown: '#2D241E', gold: '#C08A4A', bg: '#FAF6F0' },
+    { name: 'Matcha (Verde & Oliva)', brown: '#142E25', gold: '#7A8C40', bg: '#F2F6F3' },
+    { name: 'Cereza (Burdeos & Oro Rosa)', brown: '#3E1929', gold: '#D0887A', bg: '#FAF2F4' },
+    { name: 'Carbón (Elegante)', brown: '#121212', gold: '#B08E5F', bg: '#F5F5F5' },
   ];
 
   const STAMP_PRESETS = [
     { char: '🥐', name: 'Croissant' },
-    { char: '☕', name: 'Café' },
+    { char: '☕', name: 'Cafe' },
     { char: '🍪', name: 'Galleta' },
+    { char: '🧁', name: 'Cupcake' },
     { char: '🍩', name: 'Dona' },
     { char: '🥯', name: 'Bagel' },
     { char: '⭐', name: 'Estrella' },
-    { char: '🧁', name: 'Cupcake' },
   ];
 
   const handlePinKeypadPress = (val: string) => {
@@ -103,7 +144,7 @@ export default function StaffDashboard({
     const nextPin = enteredPin + val;
     setEnteredPin(nextPin);
     setPinError(null);
-    
+
     if (nextPin.length === 4) {
       if (nextPin === settingsPin) {
         setIsPinModalOpen(false);
@@ -131,129 +172,101 @@ export default function StaffDashboard({
     setEnteredPin(prev => prev.slice(0, -1));
     setPinError(null);
   };
-  
+
   // CRM tracking states
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedHistoryClientId, setSelectedHistoryClientId] = useState<string | null>(null);
   const [crmFilter, setCrmFilter] = useState<'all' | 'near' | 'ready'>('all');
   const [selectedCustomerPageId, setSelectedCustomerPageId] = useState<string | null>(null);
 
-  // Points administration state
-  const [selectedUserQr, setSelectedUserQr] = useState<string>('');
-  const [purchaseAmount, setPurchaseAmount] = useState<string>('');
-  const [pointsToAward, setPointsToAward] = useState<string>('1'); // Default manual award is 1 stamp!
-  const [customDescription, setCustomDescription] = useState<string>('');
+  // Manual code entry (Escanear tab)
+  const [manualCodeOpen, setManualCodeOpen] = useState<boolean>(false);
+  const [manualCode, setManualCode] = useState<string>('');
+
   const [feedbackMsg, setFeedbackMsg] = useState<{ text: string; isError: boolean } | null>(null);
 
-  // Calculate points/stamps if needed (not active in modern stamp mode, but kept safe)
-  const handleAmountChange = (val: string) => {
-    setPurchaseAmount(val);
-  };
-
-  const handleAwardSubmit = (e: React.FormEvent) => {
+  const handleManualCodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedUserQr) {
-      setFeedbackMsg({ text: "Por favor selecciona o escanea un cliente.", isError: true });
-      return;
-    }
-    const points = Number(pointsToAward);
-    if (isNaN(points) || points <= 0) {
-      setFeedbackMsg({ text: "Por favor introduce una cantidad de sellos válida.", isError: true });
-      return;
-    }
-
-    const desc = customDescription.trim() || `Sello de visita por consumo`;
-    
-    onAddPoints(selectedUserQr, points, desc);
-    
-    // Reset form & show toast
-    const matchedClient = registeredUsers.find(u => u.qrCode === selectedUserQr);
-    setFeedbackMsg({ 
-      text: `¡Éxito! Sumaste ${points} ${points === 1 ? 'sello' : 'sellos'} a la cuenta de ${matchedClient?.name || selectedUserQr}.`, 
-      isError: false 
-    });
-    
-    setSelectedUserQr('');
-    setPurchaseAmount('');
-    setPointsToAward('1'); // reset to default 1 stamp
-    setCustomDescription('');
-
-    setTimeout(() => setFeedbackMsg(null), 2500);
+    const code = manualCode.trim();
+    if (!code) return;
+    onAddPoints(code, 1, 'Sello de visita por código ingresado manualmente');
+    setManualCode('');
+    setManualCodeOpen(false);
   };
 
-  // Only get transactions processed in the latest feeds or globally
-  const staffTransactions = [...transactions].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  // Recent activity feed (latest 6 transactions)
+  const recentActivity = [...transactions]
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, 6);
 
   // Filter out staff roles from customer directory
   const clientUsers = registeredUsers.filter((u) => u.role === 'client');
+  const accumulatingCount = clientUsers.filter(u => u.points > 0 && u.points < 10).length;
+  const readyCount = clientUsers.filter(u => u.points === 10).length;
 
-  const activeClientPage = selectedCustomerPageId 
-    ? registeredUsers.find((u) => u.id === selectedCustomerPageId) 
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+
+  const activeClientPage = selectedCustomerPageId
+    ? registeredUsers.find((u) => u.id === selectedCustomerPageId)
     : null;
 
+  /* ══════════════════════════════════════════
+     CLIENT DETAIL PAGE ("Expediente")
+     ══════════════════════════════════════════ */
   if (activeClientPage) {
     const userTxs = transactions.filter(t => t.userId === activeClientPage.id);
     const stamps = Math.min(10, Math.max(0, activeClientPage.points));
     const isCompleted = stamps === 10;
     const init = activeClientPage.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-    const sortedTxs = [...userTxs].sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    const sortedTxs = [...userTxs].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     const lastVisitTx = sortedTxs.find(tx => tx.type === 'earn');
-    const lastVisitDate = lastVisitTx 
+    const lastVisitDate = lastVisitTx
       ? new Date(lastVisitTx.timestamp).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
       : 'Sin visitas registradas';
     const rewardsCashedCount = userTxs.filter(t => t.type === 'redeem').length;
-    const registeredSince = activeClientPage.createdAt 
+    const registeredSince = activeClientPage.createdAt
       ? new Date(activeClientPage.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
       : 'No disponible';
-    const nameParts = activeClientPage.name.trim().split(/\s+/);
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || 'No especificado';
 
     return (
-      <div className="flex-1 flex flex-col h-full bg-brand-bg text-brand-brown pb-10">
+      <div className="flex-1 flex flex-col h-full bg-[#FAF7F2] text-[#1C2117] font-sans pb-10">
         {/* Navigation & Header */}
-        <div className="bg-brand-bg/95 backdrop-blur-md border-b border-brand-brown/5 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+        <div className="bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#1C2117]/8 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
           <button
             id="detail-back-button"
             onClick={() => setSelectedCustomerPageId(null)}
-            className="flex items-center gap-2 font-sans text-[9px] font-bold uppercase tracking-widest text-brand-brown hover:text-brand-gold cursor-pointer transition-all bg-white hover:bg-stone-55 px-3 py-2 rounded-xl border border-brand-brown/5 shadow-3xs"
+            className="flex items-center gap-2 font-sans text-[10px] font-bold uppercase tracking-[0.15em] text-[#1C2117] hover:text-[#1C2117]/60 cursor-pointer transition-all bg-[#FDFBF7] px-3.5 py-2 rounded-xl border border-[#1C2117]/10"
           >
             ← Volver a Socios
           </button>
           <div className="text-right">
-            <p className="font-sans text-[8px] uppercase tracking-[0.2em] text-brand-gold font-bold">Expediente Socio</p>
-            <h2 className="font-serif italic font-semibold text-brand-brown text-sm mt-px">Detalles de Visitas</h2>
+            <p className="font-sans text-[9px] uppercase tracking-[0.25em] text-[#1C2117]/45 font-bold">Expediente de Socio</p>
           </div>
         </div>
 
-        <div className="px-6 mt-6 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)] scrollbar-none">
-          {/* Main Visual Header Card of the user */}
-          <div className="p-6 bg-white rounded-3xl border border-brand-brown/5 shadow-3xs space-y-4">
+        <div className="px-6 mt-6 space-y-5 overflow-y-auto max-h-[calc(100vh-120px)]">
+          {/* Client header card */}
+          <div className="p-6 bg-[#FDFBF7] rounded-2xl border border-[#1C2117]/10">
             <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center font-serif text-xl font-bold border shrink-0 shadow-3xs ${
-                isCompleted ? 'bg-brand-gold text-white' : 'bg-[#EADED2]/50 text-brand-brown border-brand-brown/10'
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center font-sans text-sm font-bold shrink-0 ${
+                isCompleted ? 'bg-[#C5A059] text-[#1C2117]' : 'bg-[#EDE6DA] text-[#1C2117]'
               }`}>
                 {init}
               </div>
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-center sm:justify-start">
-                  <h3 className="font-serif text-xl font-bold text-brand-brown truncate">{activeClientPage.name}</h3>
-                  {isCompleted ? (
-                    <span className="inline-flex self-center sm:self-start text-[8px] font-sans font-extrabold uppercase tracking-widest text-[#FAF7F2] bg-brand-gold px-2.5 py-1 rounded-full shrink-0 items-center justify-center gap-0.5 animate-pulse">
-                      ⭐ LISTO PARA CORTESÍA
-                    </span>
-                  ) : (
-                    <span className="inline-flex self-center sm:self-start text-[8px] font-sans font-extrabold uppercase tracking-widest text-[#2D241E]/60 bg-[#EADED2]/30 border border-brand-brown/5 px-2.5 py-1 rounded-full shrink-0">
-                      ACUMULANDO VISITAS
+                  <h3 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] truncate">{activeClientPage.name}</h3>
+                  {isCompleted && (
+                    <span className="inline-flex self-center sm:self-start text-[8px] font-sans font-bold uppercase tracking-[0.15em] text-[#8A6D3B] bg-[#F6EEDF] px-2.5 py-1 rounded-full shrink-0 items-center gap-1">
+                      <Gift className="w-2.5 h-2.5" /> Listo
                     </span>
                   )}
                 </div>
-                <p className="font-sans text-xs text-stone-400 block truncate leading-tight">{activeClientPage.email}</p>
+                <p className="font-sans text-xs text-[#1C2117]/45 block truncate">{activeClientPage.email}</p>
                 <div className="pt-1 flex flex-wrap gap-2 justify-center sm:justify-start">
-                  <span className="font-mono text-[9px] text-[#2D241E]/60 bg-[#EADED2]/20 px-2 py-0.5 rounded-md border border-[#2D241E]/5">
-                    Membresía: {activeClientPage.qrCode}
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-[#1C2117]/55 bg-[#EDE6DA] px-2 py-1 rounded-md">
+                    {activeClientPage.qrCode}
                   </span>
-                  <span className="font-mono text-[9px] text-[#C5A059] bg-[#EADED2]/20 px-2 py-0.5 rounded-md border border-brand-gold/10">
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-[#1C2117]/55 bg-[#EDE6DA] px-2 py-1 rounded-md">
                     Registro: {registeredSince}
                   </span>
                 </div>
@@ -261,157 +274,134 @@ export default function StaffDashboard({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left side: Croquis & Actions */}
-            <div className="lg:col-span-5 space-y-6">
-              
-              {/* Croquis de Planilla */}
-              <div className="bg-white p-5 rounded-3xl border border-[#2D241E]/10 shadow-3xs space-y-4">
-                <div className="flex justify-between items-center pb-2 border-b border-[#2D241E]/5">
-                  <span className="block text-[9px] font-sans font-extrabold uppercase tracking-widest text-[#C5A059]">
-                    Planilla de Visitas
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Left: stamp sheet + actions */}
+            <div className="space-y-5">
+              {/* Stamp sheet */}
+              <div className="bg-[#FDFBF7] p-5 rounded-2xl border border-[#1C2117]/10 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="block text-[9px] font-sans font-bold uppercase tracking-[0.25em] text-[#1C2117]/45">
+                    Planilla de visitas
                   </span>
-                  <span className="font-serif italic font-bold text-brand-gold text-sm leading-none">
-                    {stamps} / 10 sellos
+                  <span className="font-sans font-semibold text-[#1C2117] text-sm">
+                    {pad2(stamps)} / 10
                   </span>
                 </div>
 
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-5 gap-2.5">
                   {Array.from({ length: 10 }).map((_, idx) => {
-                    const sNum = idx + 1;
-                    const isStamped = stamps >= sNum;
+                    const isStamped = stamps >= idx + 1;
                     return (
                       <div
                         key={idx}
-                        className={`h-11 rounded-xl flex items-center justify-center text-lg transition-all ${
-                          isStamped 
-                            ? 'bg-[#EADED2]/30 border border-brand-gold scale-102 font-bold animate-fadeIn' 
-                            : 'border border-dashed border-stone-200 text-[#2D241E]/20 bg-brand-bg/40 text-xs font-bold'
+                        className={`aspect-square rounded-full flex items-center justify-center transition-all ${
+                          isStamped
+                            ? 'bg-[#2D4A2E]'
+                            : 'bg-[#FDFBF7] border border-[#1C2117]/12'
                         }`}
                       >
                         {isStamped ? (
-                          stampSymbol && (stampSymbol.startsWith('data:image/') || stampSymbol.startsWith('http')) ? (
-                            <img src={stampSymbol} alt="Sello" className="w-8 h-8 object-contain" referrerPolicy="no-referrer" />
-                          ) : (
-                            stampSymbol
-                          )
-                        ) : sNum}
+                          <Check className="w-4 h-4 text-white" strokeWidth={3} />
+                        ) : (
+                          <span className="w-1 h-1 rounded-full bg-[#1C2117]/20" />
+                        )}
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="w-full h-2 bg-stone-100 rounded-full overflow-hidden border border-black/5 mt-1">
-                  <div 
-                    className={`h-full rounded-full transition-all duration-300 ${isCompleted ? 'bg-brand-gold' : 'bg-[#C5A059]'}`}
+                <div className="w-full h-1 bg-[#EDE6DA] rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${isCompleted ? 'bg-[#C5A059]' : 'bg-[#2D4A2E]'}`}
                     style={{ width: `${stamps * 10}%` }}
                   ></div>
                 </div>
               </div>
 
-              {/* CRM Actions card on details page */}
-              <div className="bg-white p-5 rounded-3xl border border-[#2D241E]/10 shadow-3xs space-y-4">
-                <span className="block text-[9px] font-sans font-extrabold uppercase tracking-widest text-brand-brown pb-1.5 border-b border-brand-brown/5">
-                  Acciones Administrativas
+              {/* Actions */}
+              <div className="bg-[#FDFBF7] p-5 rounded-2xl border border-[#1C2117]/10 space-y-3">
+                <span className="block text-[9px] font-sans font-bold uppercase tracking-[0.25em] text-[#1C2117]/45">
+                  Acciones
                 </span>
 
-                <div className="space-y-3">
-                  <button
-                    id="add-stamp-detail-page-btn"
-                    disabled={isCompleted}
-                    onClick={() => {
-                      onAddPoints(activeClientPage.qrCode, 1, 'Sello de visita registrado desde Expediente');
-                    }}
-                    className={`w-full py-3.5 rounded-xl font-sans text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                      isCompleted 
-                        ? 'bg-brand-bg border border-brand-brown/5 text-stone-300 cursor-not-allowed border'
-                        : 'bg-brand-brown hover:bg-brand-gold text-white hover:shadow-xs'
-                    }`}
-                  >
-                    {stampSymbol && (stampSymbol.startsWith('data:image/') || stampSymbol.startsWith('http')) ? (
-                      <img src={stampSymbol} alt="Stamp" className="w-5 h-5 object-contain inline" referrerPolicy="no-referrer" />
-                    ) : (
-                      <span>{stampSymbol}</span>
-                    )}
-                    <span>+ 1 Registrar Visita (Sello)</span>
-                  </button>
+                <button
+                  id="add-stamp-detail-page-btn"
+                  disabled={isCompleted}
+                  onClick={() => {
+                    onAddPoints(activeClientPage.qrCode, 1, 'Sello de visita registrado desde Expediente');
+                  }}
+                  className={`w-full py-3.5 rounded-xl font-sans text-[10px] font-bold uppercase tracking-[0.18em] transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    isCompleted
+                      ? 'bg-[#EDE6DA] text-[#1C2117]/30 cursor-not-allowed'
+                      : 'bg-[#2D4A2E] hover:bg-[#243B25] text-[#FAF7F2]'
+                  }`}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Registrar visita (sello)</span>
+                </button>
 
-                  {isCompleted && onResetClientStamps && (
-                    <button
-                      id="reset-detail-page-btn"
-                      onClick={() => {
-                        onResetClientStamps(activeClientPage.qrCode);
-                      }}
-                      className="w-full py-3.5 bg-brand-gold hover:bg-[#B38C46] text-white border border-brand-gold rounded-xl font-sans text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 animate-pulse shadow-sm"
-                      title="Entrega cortesía y reinicia su tarjeta a 10 visitas."
-                    >
-                      <span>🎁 Canjear Cortesía & Renovar Planilla</span>
-                    </button>
-                  )}
-                </div>
+                {isCompleted && onResetClientStamps && (
+                  <button
+                    id="reset-detail-page-btn"
+                    onClick={() => {
+                      onResetClientStamps(activeClientPage.qrCode);
+                    }}
+                    className="w-full py-3.5 bg-[#C5A059] hover:bg-[#B08D4F] text-[#1C2117] rounded-xl font-sans text-[10px] font-bold uppercase tracking-[0.18em] transition-all cursor-pointer flex items-center justify-center gap-2"
+                    title="Entrega cortesía y reinicia su tarjeta a 0 visitas."
+                  >
+                    <Gift className="w-3.5 h-3.5" />
+                    <span>Canjear cortesía y renovar planilla</span>
+                  </button>
+                )}
               </div>
 
+              {/* Account summary */}
+              <div className="bg-[#FDFBF7] p-5 rounded-2xl border border-[#1C2117]/10 space-y-3">
+                <span className="block text-[9px] font-sans font-bold uppercase tracking-[0.25em] text-[#1C2117]/45">
+                  Resumen de cuenta
+                </span>
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 bg-[#FAF7F2] rounded-xl">
+                    <span className="block text-[8px] font-sans font-bold text-[#1C2117]/40 uppercase tracking-[0.15em] mb-1">Cortesías canjeadas</span>
+                    <span className="font-sans font-semibold text-[#1C2117] text-sm">{rewardsCashedCount}</span>
+                  </div>
+                  <div className="p-3 bg-[#FAF7F2] rounded-xl">
+                    <span className="block text-[8px] font-sans font-bold text-[#1C2117]/40 uppercase tracking-[0.15em] mb-1">Última visita</span>
+                    <span className="font-sans font-medium text-[#1C2117]/70 text-[11px] block truncate">{lastVisitDate}</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Right side: Summary info and Operational Histories */}
-            <div className="lg:col-span-12 xl:col-span-7 space-y-6">
-              
-              {/* Detailed profile specs */}
-              <div className="bg-white p-5 rounded-3xl border border-[#2D241E]/10 shadow-3xs space-y-4">
-                <span className="block text-[9px] font-sans font-extrabold uppercase tracking-widest text-[#C5A059] pb-1.5 border-b border-[#2D241E]/5">
-                  Resumen de Cuenta
-                </span>
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  <div className="p-3 bg-[#FAF7F2] rounded-xl border border-[#2D241E]/5">
-                    <span className="block text-[8px] font-sans font-bold text-stone-400 uppercase tracking-widest mb-1">Nombre</span>
-                    <span className="font-serif font-bold text-brand-brown text-sm">{firstName}</span>
-                  </div>
-                  <div className="p-3 bg-[#FAF7F2] rounded-xl border border-[#2D241E]/5">
-                    <span className="block text-[8px] font-sans font-bold text-stone-400 uppercase tracking-widest mb-1">Apellido(s)</span>
-                    <span className="font-serif font-bold text-brand-brown text-sm">{lastName}</span>
-                  </div>
-                  <div className="p-3 bg-[#FAF7F2] rounded-xl border border-[#2D241E]/5">
-                    <span className="block text-[8px] font-sans font-bold text-stone-400 uppercase tracking-widest mb-1">Cortesías Canjeadas</span>
-                    <span className="font-sans font-bold text-brand-brown text-sm">{rewardsCashedCount} Canje(s)</span>
-                  </div>
-                  <div className="p-3 bg-[#FAF7F2] rounded-xl border border-[#2D241E]/5">
-                    <span className="block text-[8px] font-sans font-bold text-stone-400 uppercase tracking-widest mb-1">Última Visita</span>
-                    <span className="font-sans text-stone-600 font-bold block truncate text-xs">{lastVisitDate}</span>
-                  </div>
-                </div>
-              </div>
+            {/* Right: transactions log */}
+            <div className="bg-[#FDFBF7] p-5 rounded-2xl border border-[#1C2117]/10 space-y-4 self-start">
+              <span className="block text-[9px] font-sans font-bold uppercase tracking-[0.25em] text-[#1C2117]/45">
+                Historial de operaciones
+              </span>
 
-              {/* Transactions logs table */}
-              <div className="bg-white p-5 rounded-3xl border border-[#2D241E]/10 shadow-3xs space-y-4">
-                <span className="block text-[9px] font-sans font-extrabold uppercase tracking-widest text-stone-450 pb-1.5 border-b border-[#2D241E]/5">
-                  Historial Completo de Operaciones
-                </span>
-
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                  {userTxs.length === 0 ? (
-                    <p className="font-serif italic text-stone-450 text-xs text-center py-8">
-                      No hay transacciones registradas aún para este socio.
-                    </p>
-                  ) : (
-                    userTxs.map((tx) => (
-                      <div key={tx.id} className="p-3 bg-[#FAF7F2]/60 border border-[#2D241E]/5 rounded-xl flex justify-between items-center text-xs">
-                        <div className="space-y-1 pr-2 min-w-0 text-left">
-                          <span className="font-serif italic text-brand-brown block truncate leading-snug font-semibold">
-                            {tx.description}
-                          </span>
-                          <span className="block text-[8px] text-stone-400 font-mono">
-                            {new Date(tx.timestamp).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} · Por: {tx.staffName || 'Staff'}
-                          </span>
-                        </div>
-                        <span className={`font-sans font-extrabold shrink-0 text-xs ${tx.type === 'earn' ? 'text-[#C5A059] bg-[#EADED2]/30 px-2 py-1 rounded-lg border border-brand-gold/15' : 'text-stone-500 bg-stone-100 px-2 py-1 rounded-lg'}`}>
-                          {tx.type === 'earn' ? '+' : '-'}{tx.points} {tx.points === 1 ? 'sello' : 'sellos'}
+              <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+                {sortedTxs.length === 0 ? (
+                  <p className="font-sans text-[#1C2117]/40 text-xs text-center py-8">
+                    No hay transacciones registradas aún para este socio.
+                  </p>
+                ) : (
+                  sortedTxs.map((tx) => (
+                    <div key={tx.id} className="p-3 border-b border-[#1C2117]/6 flex justify-between items-center text-xs last:border-0">
+                      <div className="space-y-0.5 pr-2 min-w-0 text-left">
+                        <span className="font-sans font-medium text-[#1C2117] block truncate leading-snug">
+                          {tx.description}
+                        </span>
+                        <span className="block text-[9px] text-[#1C2117]/40 font-mono">
+                          {new Date(tx.timestamp).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} · {tx.staffName || 'Staff'}
                         </span>
                       </div>
-                    ))
-                  )}
-                </div>
+                      <span className={`font-sans font-bold shrink-0 text-xs ${tx.type === 'earn' ? 'text-[#1C2117]' : 'text-[#1C2117]/35'}`}>
+                        {tx.type === 'earn' ? '+' : '-'}{tx.points} {tx.points === 1 ? 'sello' : 'sellos'}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
-
             </div>
           </div>
         </div>
@@ -419,18 +409,23 @@ export default function StaffDashboard({
     );
   }
 
+  /* ══════════════════════════════════════════
+     MAIN STAFF CONSOLE
+     ══════════════════════════════════════════ */
   return (
-    <div className="flex-1 flex flex-col h-full bg-brand-bg text-brand-brown pb-10">
-      
-      {/* Header section */}
-      <div className="bg-brand-bg/95 backdrop-blur-md border-b border-brand-brown/5 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-brand-brown flex items-center justify-center text-white border border-brand-gold/15">
-            <span className="font-serif italic text-brand-gold font-bold text-sm">S</span>
+    <div className="flex-1 flex flex-col h-full bg-[#FAF7F2] text-[#1C2117] font-sans pb-10">
+
+      {/* ── Header ── */}
+      <div className="px-6 md:px-10 lg:px-16 pt-6 flex items-center justify-between">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-full bg-[#2D4A2E] flex items-center justify-center flex-shrink-0">
+            <span className="font-sans font-semibold text-white text-base leading-none">{staffUser.name.charAt(0)}</span>
           </div>
           <div>
-            <p className="font-sans text-[8px] uppercase tracking-[0.2em] text-brand-gold font-bold">Consola Staff</p>
-            <h2 className="font-serif italic font-semibold text-brand-brown text-base mt-px">{staffUser.name}</h2>
+            <p className="font-sans text-[9px] uppercase tracking-[0.25em] text-[#1C2117]/45 font-bold leading-none">Consola Staff</p>
+            <h2 className="font-serif font-medium text-[#1C2117] text-xl mt-1 leading-none">
+              {staffUser.name} <span className="text-[#1C2117]/40 font-normal">&middot; Recepción</span>
+            </h2>
           </div>
         </div>
 
@@ -442,7 +437,7 @@ export default function StaffDashboard({
               setEnteredPin('');
               setPinError(null);
             }}
-            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-stone-100 text-stone-400 hover:text-brand-brown transition-all cursor-pointer"
+            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-[#1C2117]/5 text-[#1C2117]/40 hover:text-[#1C2117] transition-all cursor-pointer"
             title="Configuración"
           >
             <Settings className="w-4 h-4" />
@@ -450,7 +445,7 @@ export default function StaffDashboard({
           <button
             id="staff-logout-btn"
             onClick={onLogout}
-            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-stone-100 text-stone-400 hover:text-brand-brown transition-all cursor-pointer"
+            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-[#1C2117]/5 text-[#1C2117]/40 hover:text-[#1C2117] transition-all cursor-pointer"
             title="Cerrar Sesión"
           >
             <LogOut className="w-4 h-4" />
@@ -458,30 +453,58 @@ export default function StaffDashboard({
         </div>
       </div>
 
-      {/* Navigation for staff */}
-      <div className="mx-6 mt-6">
-        <div className="bg-[#F4F1EC] p-1 rounded-full flex border border-stone-200/40">
+      {/* ── Hero + stats ── */}
+      <div className="px-6 md:px-10 lg:px-16 pt-8">
+        <p className="font-sans text-[9px] uppercase tracking-[0.3em] text-[#1C2117]/45 font-bold">
+          Buttery &middot; Polanco
+        </p>
+        <h1 className="font-serif font-medium text-4xl md:text-5xl tracking-tight leading-[1.1] mt-3">
+          <span className="text-[#1C2117]">Sellos y socios,</span><br />
+          <span className="text-[#1C2117]/30">en un solo lugar.</span>
+        </h1>
+
+        <div className="flex gap-14 mt-8">
+          <div>
+            <p className="font-sans text-[9px] uppercase tracking-[0.25em] text-[#1C2117]/45 font-bold">Socios</p>
+            <p className="font-serif font-medium text-3xl tracking-tight text-[#1C2117] mt-1.5">{pad2(clientUsers.length)}</p>
+          </div>
+          <div>
+            <p className="font-sans text-[9px] uppercase tracking-[0.25em] text-[#1C2117]/45 font-bold">Acumulando</p>
+            <p className="font-serif font-medium text-3xl tracking-tight text-[#1C2117] mt-1.5">{pad2(accumulatingCount)}</p>
+          </div>
+          <div>
+            <p className="font-sans text-[9px] uppercase tracking-[0.25em] text-[#1C2117]/45 font-bold">Por premiar</p>
+            <p className="font-serif font-medium text-3xl tracking-tight text-[#C5A059] mt-1.5">{pad2(readyCount)}</p>
+          </div>
+        </div>
+
+        <div className="h-px bg-[#1C2117]/8 mt-8" />
+      </div>
+
+      {/* ── Tab bar ── */}
+      <div className="px-6 md:px-10 lg:px-16 mt-6">
+        <div className="bg-[#EDE6DA] p-1 rounded-xl inline-flex w-full md:w-auto">
           <button
             id="staff-tab-control-btn"
             onClick={() => setActiveTab('control')}
-            className={`flex-1 py-2.5 font-sans text-[9px] font-bold uppercase tracking-widest rounded-full cursor-pointer transition-all ${
-              activeTab === 'control' 
-                ? 'bg-white text-brand-brown shadow-2xs border border-brand-brown/5' 
-                : 'text-stone-400 hover:text-[#1C1A17]'
+            className={`flex-1 md:flex-none md:px-14 py-2.5 font-sans text-[10px] font-bold uppercase tracking-[0.18em] rounded-lg cursor-pointer transition-all ${
+              activeTab === 'control'
+                ? 'bg-[#FDFBF7] text-[#1C2117] shadow-sm'
+                : 'text-[#1C2117]/45 hover:text-[#1C2117]/70'
             }`}
           >
-            Puntos / Barra
+            Escanear
           </button>
           <button
             id="staff-tab-users-btn"
             onClick={() => setActiveTab('users')}
-            className={`flex-1 py-2.5 font-sans text-[9px] font-bold uppercase tracking-widest rounded-full cursor-pointer transition-all ${
-              activeTab === 'users' 
-                ? 'bg-white text-brand-brown shadow-2xs border border-brand-brown/5' 
-                : 'text-stone-400 hover:text-[#1C1A17]'
+            className={`flex-1 md:flex-none md:px-14 py-2.5 font-sans text-[10px] font-bold uppercase tracking-[0.18em] rounded-lg cursor-pointer transition-all ${
+              activeTab === 'users'
+                ? 'bg-[#FDFBF7] text-[#1C2117] shadow-sm'
+                : 'text-[#1C2117]/45 hover:text-[#1C2117]/70'
             }`}
           >
-            Socios ({clientUsers.length})
+            Socios &middot; {clientUsers.length}
           </button>
         </div>
       </div>
@@ -492,114 +515,176 @@ export default function StaffDashboard({
           className={`fixed top-6 left-4 right-4 mx-auto max-w-sm z-50 px-5 py-3.5 rounded-2xl flex items-center gap-3 shadow-2xl border ${
             feedbackMsg.isError
               ? 'bg-rose-600 border-rose-500/30 text-white'
-              : 'bg-[#4A6B4A] border-white/10 text-white'
+              : 'bg-[#2D4A2E] border-white/10 text-[#FAF7F2]'
           }`}
         >
           {feedbackMsg.isError ? (
             <AlertCircle className="w-4 h-4 text-white/80 flex-shrink-0" />
           ) : (
-            <Check className="w-4 h-4 text-[#C5A059] flex-shrink-0" />
+            <Check className="w-4 h-4 text-white/80 flex-shrink-0" />
           )}
           <span className="font-sans text-xs font-semibold tracking-wide">{feedbackMsg.text}</span>
         </div>
       )}
 
-      {/* Tabs panels */}
-      <div className="px-6 mt-6 flex-1 flex flex-col">
+      {/* ── Tab panels ── */}
+      <div className="px-6 md:px-10 lg:px-16 mt-6 flex-1 flex flex-col">
+
+        {/* ═ ESCANEAR / CHECK-IN ═ */}
         {activeTab === 'control' && (
-          <div className="flex-1 flex flex-col space-y-6">
-            
-            {/* Primary trigger: Live QR scan with Camera */}
-            <div className="p-6 bg-white rounded-3xl border border-brand-brown/5 text-center space-y-4 shadow-3xs">
-              <div className="w-12 h-12 bg-brand-gold text-white rounded-full flex items-center justify-center mx-auto shadow-md">
-                <QrCode className="w-6 h-6 animate-pulse" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+
+            {/* Left: Check-in card */}
+            <div className="p-8 md:p-10 bg-[#FDFBF7] rounded-2xl border border-[#1C2117]/10 text-center space-y-5">
+              <div className="relative w-fit mx-auto">
+                <div className="w-24 h-24 bg-[#2D4A2E] text-[#FAF7F2] rounded-full flex items-center justify-center">
+                  <QrCode className="w-9 h-9" />
+                </div>
+                <span className="absolute top-1 right-0 w-3 h-3 bg-[#C5A059] rounded-full border-2 border-white" />
               </div>
-              <div className="space-y-1">
-                <h3 className="font-serif text-lg font-medium text-brand-brown">Escanear Membresía</h3>
-                <p className="font-sans text-[11px] text-stone-500 leading-relaxed max-w-xs mx-auto">
-                  Escanea el código QR de socio desde la pantalla del comensal para sumarle puntos instantáneamente.
+
+              <div className="space-y-2">
+                <p className="font-sans text-[9px] uppercase tracking-[0.3em] text-[#1C2117]/45 font-bold">Check-in</p>
+                <h3 className="font-sans text-2xl font-semibold tracking-tight text-[#1C2117]">Escanear membresía</h3>
+                <p className="font-sans text-xs text-[#1C2117]/50 leading-relaxed max-w-xs mx-auto">
+                  Pide al socio abrir su planilla y apunta la cámara al QR. El sello se suma al instante.
                 </p>
               </div>
+
               <button
                 id="staff-open-scanner-btn"
                 onClick={onOpenScanner}
-                className="w-full bg-brand-brown hover:bg-brand-gold text-[#FAF7F2] font-sans text-[10px] font-bold uppercase tracking-widest py-3.5 px-4 rounded-xl cursor-pointer transition-colors shadow-sm flex items-center justify-center gap-2 max-w-xs mx-auto text-center"
+                className="w-full max-w-xs mx-auto bg-[#2D4A2E] hover:bg-[#243B25] text-[#FAF7F2] font-sans text-xs font-bold uppercase tracking-[0.2em] py-4 px-4 rounded-xl cursor-pointer transition-colors flex items-center justify-center gap-2.5"
               >
-                <Video className="w-4 h-4 text-brand-gold" />
-                Escanear Celular de Socio
+                <Camera className="w-4 h-4" />
+                Abrir cámara
               </button>
+
+              {!manualCodeOpen ? (
+                <button
+                  type="button"
+                  id="manual-code-toggle-btn"
+                  onClick={() => setManualCodeOpen(true)}
+                  className="font-sans text-xs text-[#1C2117]/55 hover:text-[#1C2117] underline underline-offset-4 decoration-[#1C2117]/20 hover:decoration-[#1C2117] transition-colors cursor-pointer"
+                >
+                  Ingresar código manualmente
+                </button>
+              ) : (
+                <form onSubmit={handleManualCodeSubmit} className="max-w-xs mx-auto flex gap-2">
+                  <input
+                    id="manual-code-input"
+                    type="text"
+                    autoFocus
+                    placeholder="Código de membresía"
+                    value={manualCode}
+                    onChange={(e) => setManualCode(e.target.value)}
+                    className="flex-1 bg-[#FDFBF7] border border-[#1C2117]/15 rounded-xl py-2.5 px-3.5 text-xs text-[#1C2117] placeholder:text-[#1C2117]/35 focus:outline-none focus:border-[#1C2117] transition-colors font-mono uppercase"
+                  />
+                  <button
+                    type="submit"
+                    id="manual-code-submit-btn"
+                    className="bg-[#2D4A2E] hover:bg-[#243B25] text-[#FAF7F2] px-4 rounded-xl font-sans text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-colors"
+                  >
+                    Sumar
+                  </button>
+                </form>
+              )}
+            </div>
+
+            {/* Right: Recent activity */}
+            <div className="pt-2">
+              <div className="flex items-center justify-between pb-4">
+                <p className="font-sans text-[9px] uppercase tracking-[0.3em] text-[#1C2117]/45 font-bold">Actividad reciente</p>
+                <Clock className="w-4 h-4 text-[#1C2117]/30" />
+              </div>
+
+              {recentActivity.length === 0 ? (
+                <div className="py-12 text-center border-t border-[#1C2117]/8">
+                  <p className="font-sans text-xs text-[#1C2117]/40">Aún no hay actividad registrada.</p>
+                </div>
+              ) : (
+                <div>
+                  {recentActivity.map((tx) => {
+                    const txUser = registeredUsers.find(u => u.id === tx.userId);
+                    const isReady = txUser?.points === 10;
+                    return (
+                      <div
+                        key={tx.id}
+                        className="py-4 border-t border-[#1C2117]/8 flex items-center justify-between gap-4"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-sans font-semibold text-sm text-[#1C2117] truncate">{tx.userName}</p>
+                          <p className="font-sans text-xs text-[#1C2117]/50 truncate mt-0.5">
+                            {isReady
+                              ? '10 / 10 · Lista para canjear'
+                              : `${tx.type === 'earn' ? '+' : '-'}${tx.points} ${tx.points === 1 ? 'sello' : 'sellos'}`}
+                          </p>
+                        </div>
+                        {isReady ? (
+                          <span className="flex items-center gap-1.5 text-[9px] font-sans font-bold uppercase tracking-[0.15em] text-[#8A6D3B] bg-[#F6EEDF] px-3 py-1.5 rounded-full shrink-0">
+                            <Gift className="w-3 h-3" /> Lista
+                          </span>
+                        ) : (
+                          <span className="w-7 h-7 rounded-full bg-[#2D4A2E] flex items-center justify-center shrink-0">
+                            <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
           </div>
         )}
 
+        {/* ═ SOCIOS / CRM ═ */}
         {activeTab === 'users' && (
           <div className="flex-1 flex flex-col space-y-5">
-            <div className="flex justify-between items-center">
-              <h3 className="font-serif text-base font-semibold text-brand-brown flex items-center gap-2">
-                <Users className="w-5 h-5 text-brand-gold" />
-                CRM DE SOCIOS DE LEALTAD
-              </h3>
-            </div>
 
-            {/* Premium Dual-filter Search Bar controls */}
-            <div className="flex flex-col md:flex-row md:items-center gap-3 bg-white p-4 rounded-2xl border border-[#2D241E]/10 shadow-3xs">
+            <p className="font-sans text-[9px] uppercase tracking-[0.3em] text-[#1C2117]/45 font-bold flex items-center gap-2">
+              <Users className="w-3.5 h-3.5" />
+              CRM de Socios
+            </p>
+
+            {/* Search + filters */}
+            <div className="flex flex-col md:flex-row md:items-center gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1C2117]/35 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Buscar socio por nombre, correo o membresía..."
+                  placeholder="Buscar por nombre, correo o membresía..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#FAF7F2] rounded-xl pl-9 pr-4 py-2 border-none text-xs text-brand-brown outline-hidden placeholder:text-stone-400 focus:ring-1 focus:ring-brand-gold/40"
+                  className="w-full bg-[#EDE6DA] rounded-xl pl-11 pr-4 py-3 border-none text-sm text-[#1C2117] outline-none placeholder:text-[#1C2117]/40 focus:ring-1 focus:ring-[#1C2117]/20"
                 />
               </div>
-              
-              <div className="flex gap-1 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+
+              <div className="flex bg-[#EDE6DA] p-1 rounded-xl">
                 {(['all', 'near', 'ready'] as const).map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setCrmFilter(filter)}
-                    className={`px-3 py-1.5 rounded-lg font-sans text-[8px] font-bold uppercase tracking-wider cursor-pointer border transition-all ${
+                    className={`px-4 py-2 rounded-lg font-sans text-[9px] font-bold uppercase tracking-[0.15em] cursor-pointer transition-all ${
                       crmFilter === filter
-                        ? 'bg-brand-brown text-[#FAF7F2] border-brand-brown'
-                        : 'bg-white text-stone-400 border-stone-200 hover:border-stone-450'
+                        ? 'bg-[#2D4A2E] text-[#FAF7F2]'
+                        : 'text-[#1C2117]/45 hover:text-[#1C2117]/70'
                     }`}
                   >
-                    {filter === 'all' ? 'Todos' : filter === 'near' ? 'Cerca (7+)' : 'Listos (10)'}
+                    {filter === 'all' ? 'Todos' : filter === 'near' ? 'Cerca' : 'Listos'}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Mini CRM Stats Section */}
-            <div className="grid grid-cols-3 gap-2 bg-gradient-to-br from-[#FAF7F2] to-[#EADED2]/30 p-3.5 rounded-2xl border border-brand-gold/15 shadow-3xs">
-              <div className="text-center space-y-0.5">
-                <span className="block font-sans text-[8px] uppercase tracking-wider text-stone-400 font-bold">Socios Activos</span>
-                <span className="block font-serif italic text-base font-bold text-brand-brown">{clientUsers.length}</span>
-              </div>
-              <div className="text-center space-y-0.5 border-x border-[#2D241E]/10">
-                <span className="block font-sans text-[8px] uppercase tracking-wider text-[#C5A059] font-bold">Acumulando</span>
-                <span className="block font-serif italic text-base font-bold text-brand-brown">
-                  {clientUsers.filter(u => u.points > 0 && u.points < 10).length}
-                </span>
-              </div>
-              <div className="text-center space-y-0.5">
-                <span className="block font-sans text-[8px] uppercase tracking-wider text-rose-500 font-bold">Por Premiar</span>
-                <span className="block font-serif italic text-base font-bold text-brand-brown flex items-center justify-center gap-1">
-                  {clientUsers.filter(u => u.points === 10).length}
-                  {clientUsers.some(u => u.points === 10) && <span className="inline-block animate-bounce text-xs">🎁</span>}
-                </span>
-              </div>
-            </div>
-
-            {/* List of matched clients with complete stamp sheet dashboards */}
+            {/* Client list */}
             {(() => {
               const matchedClients = clientUsers.filter((client) => {
-                const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                      client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
                                      client.qrCode.toLowerCase().includes(searchQuery.toLowerCase());
-                
+
                 if (!matchesSearch) return false;
                 if (crmFilter === 'near') return client.points >= 7 && client.points < 10;
                 if (crmFilter === 'ready') return client.points === 10;
@@ -608,269 +693,121 @@ export default function StaffDashboard({
 
               if (matchedClients.length === 0) {
                 return (
-                  <div className="p-8 text-center bg-white rounded-2xl border border-dashed border-stone-200">
-                    <p className="font-serif italic text-stone-400 text-xs">No se encontraron socios con los criterios de búsqueda.</p>
+                  <div className="p-10 text-center border-t border-[#1C2117]/8">
+                    <p className="font-sans text-xs text-[#1C2117]/40">No se encontraron socios con los criterios de búsqueda.</p>
                   </div>
                 );
               }
 
               return (
-                <div className="bg-white rounded-2xl border border-[#2D241E]/10 overflow-hidden shadow-3xs pb-2">
-                  {/* Table Header block on larger screens */}
-                  <div className="hidden sm:grid grid-cols-12 gap-4 px-5 py-3 bg-[#FAF7F2] border-b border-[#2D241E]/5 text-[8px] font-sans font-bold uppercase tracking-widest text-[#2D241E]/50">
-                    <div className="col-span-4">Socio / Correo</div>
-                    <div className="col-span-2">Código QR</div>
-                    <div className="col-span-3">Progreso de Planilla</div>
-                    <div className="col-span-3 text-right">Acciones Rápidas</div>
-                  </div>
+                <div className="border-t border-[#1C2117]/8">
+                  {matchedClients.map((client) => {
+                    const userTxs = transactions.filter(t => t.userId === client.id);
+                    const stamps = Math.min(10, Math.max(0, client.points));
+                    const isCompleted = stamps === 10;
+                    const init = client.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                    const sortedTxs = [...userTxs].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                    const lastVisitTx = sortedTxs.find(tx => tx.type === 'earn');
+                    const lastVisitLabel = daysAgoLabel(lastVisitTx?.timestamp);
 
-                  <div className="divide-y divide-[#2D241E]/5">
-                    {matchedClients.map((client) => {
-                      const userTxs = transactions.filter(t => t.userId === client.id);
-                      const stamps = Math.min(10, Math.max(0, client.points));
-                      const isCompleted = stamps === 10;
-                      const init = client.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-
-                      return (
-                        <div key={client.id} className={`transition-all hover:bg-[#FAF7F2]/30 ${isCompleted ? 'bg-[#FAF7F2]/45' : ''}`}>
-                          {/* Main Interactive Row */}
-                          <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4 items-center">
-                            
-                            {/* Col 1: Avatar, Name, Email */}
-                            <div className="col-span-1 sm:col-span-4 flex items-center gap-3">
+                    return (
+                      <div
+                        key={client.id}
+                        className="py-4 border-b border-[#1C2117]/8 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-center"
+                      >
+                        {/* Avatar + name + email */}
+                        <div className="md:col-span-4 flex items-center gap-3.5">
+                          <button
+                            id={`client-avatar-btn-${client.id}`}
+                            onClick={() => setSelectedCustomerPageId(client.id)}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center font-sans text-[11px] font-bold shrink-0 transition-all hover:scale-105 cursor-pointer ${
+                              isCompleted ? 'bg-[#C5A059] text-[#1C2117]' : 'bg-[#EDE6DA] text-[#1C2117]'
+                            }`}
+                            title="Ver expediente del socio"
+                          >
+                            {init}
+                          </button>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
                               <button
-                                id={`client-avatar-btn-${client.id}`}
+                                id={`client-name-btn-${client.id}`}
                                 onClick={() => setSelectedCustomerPageId(client.id)}
-                                className={`w-9 h-9 rounded-full flex items-center justify-center font-serif text-[11px] font-bold shrink-0 shadow-3xs transition-all hover:scale-105 hover:bg-brand-gold hover:text-white cursor-pointer ${
-                                  isCompleted ? 'bg-brand-gold text-white' : 'bg-[#EADED2]/50 text-brand-brown border border-brand-brown/10'
-                                }`}
+                                className="font-sans text-sm font-semibold text-[#1C2117] hover:underline truncate text-left cursor-pointer"
                                 title="Ver expediente del socio"
                               >
-                                {init}
+                                {client.name}
                               </button>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    id={`client-name-btn-${client.id}`}
-                                    onClick={() => setSelectedCustomerPageId(client.id)}
-                                    className="font-serif text-xs font-bold text-brand-brown hover:text-brand-gold hover:underline truncate text-left cursor-pointer transition-colors"
-                                    title="Ver expediente del socio"
-                                  >
-                                    {client.name}
-                                  </button>
-                                  {isCompleted && (
-                                    <span className="text-[7px] font-sans font-extrabold uppercase tracking-widest text-[#FAF7F2] bg-brand-gold px-1.5 py-0.5 rounded-full shrink-0 flex items-center gap-0.5 animate-pulse">
-                                      ⭐ LISTO
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="font-sans text-[10px] text-stone-400 block truncate leading-tight">{client.email}</span>
-                              </div>
-                            </div>
-
-                            {/* Col 2: Code badge */}
-                            <div className="col-span-1 sm:col-span-2 flex items-center">
-                              <span className="font-mono text-[9px] text-[#2D241E]/60 bg-[#EADED2]/20 px-2 py-1 rounded-md border border-[#2D241E]/5 truncate">
-                                {client.qrCode}
-                              </span>
-                            </div>
-
-                            {/* Col 3: Points/Stamps Progress indicators */}
-                            <div className="col-span-1 sm:col-span-3">
-                              <div className="flex items-center justify-between sm:justify-start sm:gap-3">
-                                <span className="font-serif italic font-bold text-brand-gold text-xs leading-none">
-                                  {stamps} / 10 sellos
+                              {isCompleted && (
+                                <span className="flex items-center gap-1 text-[8px] font-sans font-bold uppercase tracking-[0.15em] text-[#8A6D3B] bg-[#F6EEDF] px-2 py-0.5 rounded-full shrink-0">
+                                  <Gift className="w-2.5 h-2.5" /> Listo
                                 </span>
-                                {/* Miniature progress bar */}
-                                <div className="w-24 h-1.5 bg-stone-100 rounded-full overflow-hidden border border-black/5 hidden md:block">
-                                  <div 
-                                    className={`h-full rounded-full transition-all duration-300 ${isCompleted ? 'bg-brand-gold' : 'bg-[#C5A059]'}`}
-                                    style={{ width: `${stamps * 10}%` }}
-                                  ></div>
-                                </div>
-                              </div>
+                              )}
                             </div>
-
-                            {/* Col 4: Buttons / Accordion toggle */}
-                            <div className="col-span-1 sm:col-span-3 flex items-center justify-between sm:justify-end gap-2.5">
-                              {/* Stamps Buttons row */}
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  id={`quick-crm-stamp-${client.id}`}
-                                  disabled={isCompleted}
-                                  onClick={() => {
-                                    onAddPoints(client.qrCode, 1, 'Sello de visita por escaneo rápido en CRM');
-                                  }}
-                                  className={`px-3 py-1.5 rounded-lg font-sans text-[8px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
-                                    isCompleted 
-                                      ? 'bg-[#FAF7F2] border border-brand-brown/5 text-stone-300 cursor-not-allowed'
-                                      : 'bg-brand-brown hover:bg-brand-gold text-white hover:shadow-xs'
-                                  }`}
-                                >
-                                  <span>+ 1 Sello</span>
-                                </button>
-
-                                {isCompleted && onResetClientStamps && (
-                                  <button
-                                    id={`quick-crm-reset-${client.id}`}
-                                    onClick={() => {
-                                      onResetClientStamps(client.qrCode);
-                                    }}
-                                    className="px-2.5 py-1.5 bg-brand-gold hover:bg-[#B38C46] text-white border border-brand-gold rounded-lg font-sans text-[8px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 shrink-0 animate-pulse"
-                                    title="Entrega cortesía y reinicia su tarjeta a 0 visitas."
-                                  >
-                                    <span>Canjear 🎁</span>
-                                  </button>
-                                )}
-                              </div>
-
-                              {/* Details/Ledger toggle */}
-                              <button
-                                id={`details-toggle-${client.id}`}
-                                onClick={() => {
-                                  setSelectedCustomerPageId(client.id);
-                                }}
-                                className={`p-1.5 rounded-lg border border-stone-200 text-stone-400 hover:text-brand-brown hover:border-brand-gold hover:bg-[#EADED2]/10 transition-colors flex items-center justify-center cursor-pointer`}
-                                title="Ver expediente completo del socio"
-                              >
-                                <Clock className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-
+                            <span className="font-sans text-xs text-[#1C2117]/45 block truncate mt-0.5">{client.email}</span>
                           </div>
-
-                          {/* EXPANDED SECTION (Stamps Detail & Ledger History) */}
-                          {selectedHistoryClientId === client.id && (() => {
-                            const sortedTxs = [...userTxs].sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-                            const lastVisitTx = sortedTxs.find(tx => tx.type === 'earn');
-                            const lastVisitDate = lastVisitTx 
-                              ? new Date(lastVisitTx.timestamp).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                              : 'Sin visitas registradas';
-                            const rewardsCashedCount = userTxs.filter(t => t.type === 'redeem').length;
-                            const registeredSince = client.createdAt 
-                              ? new Date(client.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })
-                              : 'No disponible';
-                            const nameParts = client.name.trim().split(/\s+/);
-                            const firstName = nameParts[0] || '';
-                            const lastName = nameParts.slice(1).join(' ') || 'No especificado';
-
-                            return (
-                              <div className="px-5 pb-5 pt-3 bg-[#FAF7F2]/60 border-t border-[#2D241E]/5 transition-all text-left space-y-4">
-                                
-                                {/* Top detailed profile card */}
-                                <div className="bg-white p-4 rounded-xl border border-[#2D241E]/5 shadow-3xs space-y-3">
-                                  <div className="flex items-center gap-2 pb-2 border-b border-[#2D241E]/5">
-                                    <User className="w-4 h-4 text-brand-gold" />
-                                    <span className="font-sans text-[9px] font-extrabold uppercase tracking-widest text-[#2D241E]/60">
-                                      Resumen del Historial del Socio
-                                    </span>
-                                  </div>
-                                  
-                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                                    <div>
-                                      <span className="block text-[8px] font-sans font-bold text-stone-400 uppercase tracking-widest">Nombre</span>
-                                      <span className="font-serif font-bold text-brand-brown">{firstName}</span>
-                                    </div>
-                                    <div>
-                                      <span className="block text-[8px] font-sans font-bold text-stone-400 uppercase tracking-widest">Apellido(s)</span>
-                                      <span className="font-serif font-bold text-brand-brown">{lastName}</span>
-                                    </div>
-                                    <div>
-                                      <span className="block text-[8px] font-sans font-bold text-stone-400 uppercase tracking-widest">Sellos Actuales</span>
-                                      <span className="font-sans font-bold text-brand-gold text-xs">{stamps} / 10 sellos</span>
-                                    </div>
-                                    <div>
-                                      <span className="block text-[8px] font-sans font-bold text-stone-400 uppercase tracking-widest">Cortesías Canjeadas</span>
-                                      <span className="font-sans font-bold text-brand-brown text-xs">{rewardsCashedCount} canje(s)</span>
-                                    </div>
-                                  </div>
-
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-1.5 border-t border-dashed border-[#2D241E]/5">
-                                    <div>
-                                      <span className="block text-[8px] font-sans font-bold text-stone-400 uppercase tracking-widest">Última Visita</span>
-                                      <span className="font-sans text-stone-600 font-medium text-[11px] block truncate">{lastVisitDate}</span>
-                                    </div>
-                                    <div>
-                                      <span className="block text-[8px] font-sans font-bold text-stone-400 uppercase tracking-widest">Fecha de Registro</span>
-                                      <span className="font-sans text-stone-600 font-medium text-[11px] block">{registeredSince}</span>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                  
-                                  {/* Left block: Detail 10 stamps sheet representation */}
-                                  <div className="bg-white p-3.5 rounded-xl border border-[#2D241E]/5 shadow-3xs">
-                                    <span className="block text-[8px] font-sans font-extrabold uppercase tracking-widest text-[#C5A059] mb-2 px-0.5">
-                                      CROQUIS DE PLANILLA DE VISITAS
-                                    </span>
-                                    <div className="grid grid-cols-5 gap-2">
-                                      {Array.from({ length: 10 }).map((_, idx) => {
-                                        const sNum = idx + 1;
-                                        const isStamped = stamps >= sNum;
-                                        return (
-                                          <div
-                                            key={idx}
-                                            className={`h-8 rounded-lg flex items-center justify-center text-sm transition-all ${
-                                              isStamped 
-                                                ? 'bg-[#EADED2]/30 border border-brand-gold scale-102 font-bold animate-fadeIn' 
-                                                : 'border border-dashed border-stone-200 text-[#2D241E]/20 bg-brand-bg/40 text-[9px] font-bold'
-                                            }`}
-                                          >
-                                            {isStamped ? (
-                                              stampSymbol && (stampSymbol.startsWith('data:image/') || stampSymbol.startsWith('http')) ? (
-                                                <img src={stampSymbol} alt="Sello" className="w-5 h-5 object-contain" referrerPolicy="no-referrer" />
-                                              ) : (
-                                                stampSymbol
-                                              )
-                                            ) : sNum}
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-
-                                  {/* Right block: Activity Log ledger */}
-                                  <div className="bg-white p-3.5 rounded-xl border border-[#2D241E]/5 shadow-3xs flex flex-col justify-start">
-                                    <span className="block text-[8px] font-sans font-extrabold uppercase tracking-widest text-stone-400 mb-2 px-0.5 flex items-center justify-between">
-                                      <span>HISTORIAL DE OPERACIONES</span>
-                                      <span className="font-normal font-mono normal-case text-stone-500 text-[9px]">{client.name}</span>
-                                    </span>
-
-                                    <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
-                                      {userTxs.length === 0 ? (
-                                        <p className="font-serif italic text-stone-450 text-[10px] text-center py-4">
-                                          No hay transacciones registradas aún.
-                                        </p>
-                                      ) : (
-                                        userTxs.map((tx) => (
-                                          <div key={tx.id} className="p-2 bg-[#FAF7F2]/60 border border-[#2D241E]/5 rounded-lg flex justify-between items-center text-[10px]">
-                                            <div className="space-y-0.5 pr-1 min-w-0 text-left">
-                                              <span className="font-serif italic text-brand-brown block truncate leading-tight">
-                                                {tx.description}
-                                              </span>
-                                              <span className="block text-[7.5px] text-stone-400 font-mono">
-                                                {new Date(tx.timestamp).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })} · Por: {tx.staffName || 'Staff'}
-                                              </span>
-                                            </div>
-                                            <span className={`font-sans font-bold shrink-0 text-[10px] ${tx.type === 'earn' ? 'text-[#C5A059]' : 'text-stone-400'}`}>
-                                              {tx.type === 'earn' ? '+' : '-'}{tx.points} {tx.points === 1 ? 'sello' : 'sellos'}
-                                            </span>
-                                          </div>
-                                        ))
-                                      )}
-                                    </div>
-                                  </div>
-
-                                </div>
-                              </div>
-                            );
-                          })()}
-
                         </div>
-                      );
-                    })}
-                  </div>
+
+                        {/* Membership code */}
+                        <div className="md:col-span-2 hidden md:block">
+                          <span className="font-mono text-[10px] uppercase tracking-wider text-[#1C2117]/50 truncate">
+                            {client.qrCode}
+                          </span>
+                        </div>
+
+                        {/* Progress + last visit */}
+                        <div className="md:col-span-4">
+                          <div className="flex items-center justify-between gap-4">
+                            <span className={`font-mono text-[10px] uppercase tracking-wider ${isCompleted ? 'text-[#8A6D3B] font-bold' : 'text-[#1C2117]/70'}`}>
+                              {pad2(stamps)} / 10
+                            </span>
+                            <span className="font-mono text-[9px] uppercase tracking-wider text-[#1C2117]/40">
+                              {lastVisitLabel}
+                            </span>
+                          </div>
+                          <div className="w-full h-[3px] bg-[#EDE6DA] rounded-full overflow-hidden mt-2">
+                            <div
+                              className={`h-full rounded-full transition-all duration-300 ${isCompleted ? 'bg-[#C5A059]' : 'bg-[#2D4A2E]'}`}
+                              style={{ width: `${stamps * 10}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="md:col-span-2 flex items-center justify-start md:justify-end gap-2">
+                          {isCompleted && onResetClientStamps ? (
+                            <button
+                              id={`quick-crm-reset-${client.id}`}
+                              onClick={() => onResetClientStamps(client.qrCode)}
+                              className="px-4 py-2 bg-[#C5A059] hover:bg-[#B08D4F] text-[#1C2117] rounded-xl font-sans text-[9px] font-bold uppercase tracking-[0.15em] transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+                              title="Entrega cortesía y reinicia su tarjeta a 0 visitas."
+                            >
+                              <Gift className="w-3 h-3" />
+                              <span>Canjear</span>
+                            </button>
+                          ) : (
+                            <button
+                              id={`quick-crm-stamp-${client.id}`}
+                              onClick={() => onAddPoints(client.qrCode, 1, 'Sello de visita registrado desde CRM')}
+                              className="px-4 py-2 bg-[#FDFBF7] border border-[#1C2117]/15 hover:border-[#1C2117]/40 text-[#1C2117] rounded-xl font-sans text-[9px] font-bold uppercase tracking-[0.15em] transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>Sello</span>
+                            </button>
+                          )}
+
+                          <button
+                            id={`details-toggle-${client.id}`}
+                            onClick={() => setSelectedCustomerPageId(client.id)}
+                            className="w-9 h-9 rounded-xl border border-[#1C2117]/15 text-[#1C2117]/40 hover:text-[#1C2117] hover:border-[#1C2117]/40 transition-colors flex items-center justify-center cursor-pointer shrink-0"
+                            title="Ver expediente completo del socio"
+                          >
+                            <History className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })()}
@@ -878,25 +815,25 @@ export default function StaffDashboard({
         )}
       </div>
 
-      {/* SECURITY PIN PAD LOCKSCREEN MODAL */}
+      {/* ── SECURITY PIN PAD MODAL ── */}
       {isPinModalOpen && (
-        <div className="fixed inset-0 bg-[#1C1A17]/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn p-4">
-          <div className="w-full max-w-xs bg-white rounded-3xl p-6 shadow-2xl border border-[#2D241E]/10 text-center space-y-6 animate-scaleUp">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn p-4">
+          <div className="w-full max-w-xs bg-[#FDFBF7] rounded-3xl p-6 shadow-2xl text-center space-y-6 animate-scaleUp">
             <div>
-              <div className="w-12 h-12 bg-[#FAF7F2] text-[#C5A059] rounded-2xl flex items-center justify-center mx-auto border border-[#C5A059]/20 shadow-3xs">
-                <Lock className="w-5 h-5 animate-pulse" />
+              <div className="w-12 h-12 bg-[#EDE6DA] text-[#1C2117] rounded-2xl flex items-center justify-center mx-auto">
+                <Lock className="w-5 h-5" />
               </div>
-              <h3 className="font-serif italic text-base font-semibold text-brand-brown mt-3">Verificación de Personal</h3>
-              <p className="font-sans text-[10px] text-stone-400 mt-1 uppercase tracking-wider font-bold">Introducir PIN de Seguridad</p>
+              <h3 className="font-sans text-base font-semibold tracking-tight text-[#1C2117] mt-3">Verificación de Personal</h3>
+              <p className="font-sans text-[9px] text-[#1C2117]/45 mt-1 uppercase tracking-[0.2em] font-bold">Introducir PIN de seguridad</p>
             </div>
-            
+
             {/* PIN Code indicators */}
             <div className="flex justify-center gap-3">
               {Array.from({ length: 4 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className={`w-3.5 h-3.5 rounded-full border border-brand-brown/15 transition-all ${
-                    enteredPin.length > idx ? 'bg-brand-gold scale-110 shadow-3xs' : 'bg-[#FAF7F2]'
+                  className={`w-3.5 h-3.5 rounded-full transition-all ${
+                    enteredPin.length > idx ? 'bg-[#2D4A2E] scale-110' : 'bg-[#EDE6DA]'
                   }`}
                 />
               ))}
@@ -906,14 +843,14 @@ export default function StaffDashboard({
               <p className="font-sans text-[10px] text-rose-500 font-bold tracking-wide">{pinError}</p>
             )}
 
-            {/* Complete responsive lock keyboard */}
+            {/* Keypad */}
             <div className="grid grid-cols-3 gap-2.5 max-w-[210px] mx-auto">
               {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
                 <button
                   key={num}
                   id={`pin-btn-${num}`}
                   onClick={() => handlePinKeypadPress(num)}
-                  className="w-14 h-14 rounded-full bg-[#FAF7F2] border border-[#2D241E]/5 hover:bg-[#EADED2]/25 font-sans text-base font-bold text-brand-brown transition-all cursor-pointer flex items-center justify-center active:scale-90"
+                  className="w-14 h-14 rounded-full bg-[#FAF7F2] border border-[#1C2117]/8 hover:bg-[#EDE6DA] font-sans text-base font-semibold text-[#1C2117] transition-all cursor-pointer flex items-center justify-center active:scale-90"
                 >
                   {num}
                 </button>
@@ -925,45 +862,78 @@ export default function StaffDashboard({
                   setPinError(null);
                   setIsPinModalOpen(false);
                 }}
-                className="w-14 h-14 font-sans text-[9px] font-bold uppercase tracking-widest text-[#2D241E]/50 hover:text-brand-brown cursor-pointer flex items-center justify-center"
+                className="w-14 h-14 font-sans text-[9px] font-bold uppercase tracking-[0.15em] text-[#1C2117]/45 hover:text-[#1C2117] cursor-pointer flex items-center justify-center"
               >
                 Cerrar
               </button>
               <button
                 id="pin-btn-0"
                 onClick={() => handlePinKeypadPress('0')}
-                className="w-14 h-14 rounded-full bg-[#FAF7F2] border border-[#2D241E]/5 hover:bg-[#EADED2]/25 font-sans text-base font-bold text-brand-brown transition-all cursor-pointer flex items-center justify-center active:scale-90"
+                className="w-14 h-14 rounded-full bg-[#FAF7F2] border border-[#1C2117]/8 hover:bg-[#EDE6DA] font-sans text-base font-semibold text-[#1C2117] transition-all cursor-pointer flex items-center justify-center active:scale-90"
               >
                 0
               </button>
               <button
                 id="pin-btn-delete"
                 onClick={handlePinKeypadBackspace}
-                className="w-14 h-14 font-sans text-[9px] font-bold uppercase tracking-widest text-[#2D241E]/50 hover:text-brand-brown cursor-pointer flex items-center justify-center"
+                className="w-14 h-14 font-sans text-[9px] font-bold uppercase tracking-[0.15em] text-[#1C2117]/45 hover:text-[#1C2117] cursor-pointer flex items-center justify-center"
               >
                 Borrar
               </button>
             </div>
-            <p className="font-sans text-[9px] text-[#2D241E]/40 italic">PIN de demostración por defecto: 1234</p>
+            <p className="font-sans text-[9px] text-[#1C2117]/35">PIN de demostración por defecto: 1234</p>
           </div>
         </div>
       )}
 
-      {/* STAFF EXCLUSIVE CONFIGURATION MODAL */}
+      {/* ══════════════════════════════════════════
+          STAFF CONFIGURATION — full-page brand settings
+          ══════════════════════════════════════════ */}
       {isSettingsOpen && (
-        <div className="fixed inset-0 bg-[#1C1A17]/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn p-4 overflow-y-auto">
-          <div className="w-full max-w-sm bg-white rounded-[2rem] p-6 shadow-2xl border border-[#2D241E]/10 space-y-6 animate-scaleUp my-8 max-h-[90vh] overflow-y-auto scrollbar-none text-left">
-            <div className="border-b border-[#2D241E]/5 pb-3">
-              <h3 className="font-serif italic text-lg font-semibold text-brand-brown">Configuración de Marca</h3>
-              <p className="font-sans text-[9px] text-stone-400 mt-0.5 uppercase tracking-wider font-bold">Personalizable por el Staff de Buttery</p>
+        <div className="fixed inset-0 z-50 bg-[#FAF7F2] overflow-y-auto animate-fadeIn">
+          <div className="max-w-2xl mx-auto px-6 md:px-10 pb-40">
+
+            {/* Top bar */}
+            <div className="flex items-center justify-between pt-7">
+              <button
+                id="settings-btn-back"
+                onClick={() => setIsSettingsOpen(false)}
+                className="flex items-center gap-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-[#1C2117] hover:text-[#1C2117]/55 cursor-pointer transition-colors"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" /> Staff
+              </button>
+              <span className="font-sans text-[10px] font-bold uppercase tracking-[0.25em] text-[#1C2117]/45">Admin</span>
             </div>
 
-            {/* Símbolo de Sello */}
-            <div className="space-y-2.5">
-              <span className="block font-sans text-[8px] font-extrabold uppercase tracking-widest text-[#C5A059]">
-                1. Símbolo del Sello (Planilla)
-              </span>
-              <div className="grid grid-cols-4 gap-2">
+            {/* Heading */}
+            <div className="pt-8">
+              <p className="font-sans text-[9px] uppercase tracking-[0.3em] text-[#1C2117]/45 font-bold">
+                Buttery &middot; Polanco
+              </p>
+              <h1 className="font-serif font-medium text-4xl md:text-5xl tracking-tight leading-[1.1] mt-3">
+                <span className="text-[#1C2117]">Configuración</span><br />
+                <span className="text-[#1C2117]/30">de marca</span>
+              </h1>
+              <p className="font-sans text-sm text-[#1C2117]/55 mt-4 leading-relaxed max-w-md">
+                Personaliza el sello, la paleta y los recursos visuales del programa de lealtad de Buttery.
+              </p>
+            </div>
+
+            <div className="h-px bg-[#1C2117]/8 mt-8" />
+
+            {/* ── 01 · Stamp symbol ── */}
+            <section className="pt-10">
+              <div className="flex items-start justify-between gap-4">
+                <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
+                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">01</span>
+                  Símbolo del sello
+                </h2>
+                <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[140px] pt-1.5">
+                  Se muestra en la tarjeta del socio
+                </p>
+              </div>
+
+              <div className="grid grid-cols-4 gap-3 mt-6">
                 {STAMP_PRESETS.map((p) => {
                   const isSelected = tempStamp === p.char;
                   return (
@@ -971,43 +941,47 @@ export default function StaffDashboard({
                       key={p.char}
                       id={`preset-stamp-${p.name.toLowerCase()}`}
                       onClick={() => setTempStamp(p.char)}
-                      className={`h-11 rounded-xl flex flex-col items-center justify-center border transition-all cursor-pointer ${
-                        isSelected 
-                          ? 'bg-[#EADED2]/40 border-[#C5A059] scale-105 shadow-3xs font-bold text-lg' 
-                          : 'bg-[#FAF7F2] border-stone-200 text-stone-500 hover:border-stone-400 font-sans text-base'
+                      className={`aspect-square rounded-full flex items-center justify-center border transition-all cursor-pointer text-2xl ${
+                        isSelected
+                          ? 'bg-[#1C2117] border-[#1C2117] scale-105'
+                          : 'bg-[#FDFBF7] border-[#1C2117]/12 hover:border-[#1C2117]/35'
                       }`}
                       title={p.name}
                     >
-                      <span>{p.char}</span>
+                      {isSelected ? (
+                        <Check className="w-6 h-6 text-white" strokeWidth={2.5} />
+                      ) : (
+                        <span>{p.char}</span>
+                      )}
                     </button>
                   );
                 })}
               </div>
 
               {/* Custom Image Stamp Uploader */}
-              <div className="pt-2.5 border-t border-brand-brown/5 space-y-2">
-                <span className="block font-sans text-[8px] font-extrabold uppercase tracking-widest text-[#C5A059]">
-                  O Sube una Imagen de Sello Personalizada:
+              <div className="mt-8">
+                <span className="block font-sans text-[9px] font-bold uppercase tracking-[0.2em] text-[#1C2117]/45">
+                  O sube una imagen personalizada
                 </span>
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-[#FAF7F2] border border-stone-200 flex items-center justify-center relative overflow-hidden shrink-0">
+                <div className="flex items-center gap-4 mt-4">
+                  <div className="w-16 h-16 rounded-full bg-[#FDFBF7] border border-[#1C2117]/12 flex items-center justify-center relative overflow-hidden shrink-0">
                     {tempStamp && (tempStamp.startsWith('data:image/') || tempStamp.startsWith('http')) ? (
-                      <img src={tempStamp} alt="Sello cargado" className="w-9 h-9 object-contain" referrerPolicy="no-referrer" />
+                      <img src={tempStamp} alt="Sello cargado" className="w-12 h-12 object-contain" referrerPolicy="no-referrer" />
                     ) : (
-                      <span className="text-xl text-stone-300">🖼️</span>
+                      <Upload className="w-5 h-5 text-[#1C2117]/30" />
                     )}
                   </div>
                   <div className="flex-1">
-                    <label 
-                      htmlFor="custom-stamp-upload-input" 
-                      className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg font-sans text-[8px] font-bold uppercase tracking-wider cursor-pointer inline-block border border-stone-200"
+                    <label
+                      htmlFor="custom-stamp-upload-input"
+                      className="px-5 py-2.5 bg-[#FDFBF7] border border-[#1C2117]/15 hover:border-[#1C2117]/40 text-[#1C2117] rounded-full font-sans text-[10px] font-bold uppercase tracking-[0.15em] cursor-pointer inline-block transition-colors"
                     >
-                      Seleccionar Archivo
+                      Seleccionar archivo
                     </label>
-                    <input 
+                    <input
                       id="custom-stamp-upload-input"
-                      type="file" 
-                      accept="image/*" 
+                      type="file"
+                      accept="image/*"
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
@@ -1017,7 +991,7 @@ export default function StaffDashboard({
                             if (event.target?.result) {
                               const img = new Image();
                               img.onload = () => {
-                                const maxDim = 120; // 120px is perfect size for stamp and very small
+                                const maxDim = 120;
                                 let width = img.width;
                                 let height = img.height;
                                 if (width > maxDim || height > maxDim) {
@@ -1035,7 +1009,7 @@ export default function StaffDashboard({
                                 const ctx = canvas.getContext('2d');
                                 if (ctx) {
                                   ctx.drawImage(img, 0, 0, width, height);
-                                  const compressedBase64 = canvas.toDataURL('image/png'); // png preserves transparency
+                                  const compressedBase64 = canvas.toDataURL('image/png');
                                   setTempStamp(compressedBase64);
                                 } else {
                                   setTempStamp(event.target?.result as string);
@@ -1048,20 +1022,28 @@ export default function StaffDashboard({
                         }
                       }}
                     />
-                    <p className="font-sans text-[8px] text-stone-400 mt-1">Recomendado: PNG fondo transparente (fino)</p>
+                    <p className="font-sans text-[11px] text-[#1C2117]/45 mt-2">PNG, fondo transparente recomendado</p>
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Combinaciones de Colores de Tema */}
-            <div className="space-y-2.5">
-              <span className="block font-sans text-[8px] font-extrabold uppercase tracking-widest text-[#C5A059]">
-                2. Paleta de Color del Club
-              </span>
-              <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+            {/* ── 02 · Theme palette ── */}
+            <section className="pt-12">
+              <div className="flex items-start justify-between gap-4">
+                <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
+                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">02</span>
+                  Paleta del club
+                </h2>
+                <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[140px] pt-1.5">
+                  Aplica a botones, sellos y acentos
+                </p>
+              </div>
+
+              <div className="space-y-2.5 mt-6">
                 {THEME_PRESETS.map((p) => {
                   const isSelected = tempBrown === p.brown && tempGold === p.gold && tempBg === p.bg;
+                  const [title, subtitle] = p.name.split(' (');
                   return (
                     <button
                       key={p.name}
@@ -1071,129 +1053,99 @@ export default function StaffDashboard({
                         setTempGold(p.gold);
                         setTempBg(p.bg);
                       }}
-                      className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${
-                        isSelected 
-                          ? 'bg-[#EADED2]/30 border-[#C5A059] shadow-3xs font-semibold' 
-                          : 'bg-[#FAF7F2]/60 border-stone-200 hover:border-stone-400'
+                      className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all cursor-pointer text-left ${
+                        isSelected
+                          ? 'bg-[#FDFBF7] border-[#1C2117] shadow-sm'
+                          : 'bg-[#FDFBF7] border-[#1C2117]/10 hover:border-[#1C2117]/30'
                       }`}
                     >
-                      <span className="font-serif text-xs text-[#2D241E]">{p.name}</span>
-                      <div className="flex gap-1.5 shrink-0">
-                        <div className="w-5 h-5 rounded-full border border-black/10" style={{ backgroundColor: p.brown }} title="Color de marca" />
-                        <div className="w-5 h-5 rounded-full border border-black/10" style={{ backgroundColor: p.gold }} title="Color acento" />
-                        <div className="w-5 h-5 bg-stone-100 rounded-full border border-black/10" style={{ backgroundColor: p.bg }} title="Color fondo" />
+                      <div>
+                        <span className="font-sans text-sm font-semibold text-[#1C2117] block">{title}</span>
+                        {subtitle && (
+                          <span className="font-sans text-xs text-[#1C2117]/50 block mt-0.5">{subtitle.replace(')', '')}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2.5 shrink-0">
+                        <div className="flex gap-1.5">
+                          <div className="w-5 h-5 rounded-full border border-black/10" style={{ backgroundColor: p.brown }} title="Color de marca" />
+                          <div className="w-5 h-5 rounded-full border border-black/10" style={{ backgroundColor: p.gold }} title="Color acento" />
+                          <div className="w-5 h-5 rounded-full border border-black/10" style={{ backgroundColor: p.bg }} title="Color fondo" />
+                        </div>
+                        {isSelected && <Check className="w-4 h-4 text-[#1C2117] ml-1" strokeWidth={2.5} />}
                       </div>
                     </button>
                   );
                 })}
               </div>
 
-              {/* Custom hex and color picker */}
-              <div className="pt-2.5 border-t border-brand-brown/5 space-y-2">
-                <span className="block font-sans text-[8px] font-extrabold uppercase tracking-widest text-[#C5A059]">
-                  O Ingresa tus Propios Códigos de Color (HEX):
+              {/* Custom hex */}
+              <div className="mt-8">
+                <span className="block font-sans text-[9px] font-bold uppercase tracking-[0.2em] text-[#1C2117]/45">
+                  O ingresa tus propios códigos (HEX)
                 </span>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1">
-                    <label className="block text-[8px] font-sans font-semibold text-stone-500">Color Marca</label>
-                    <div className="flex items-center gap-1.5">
-                      <div className="relative w-6 h-6 rounded-md border border-stone-300 cursor-pointer shrink-0" style={{ backgroundColor: tempBrown }}>
-                        <input 
-                          type="color" 
-                          value={tempBrown.startsWith('#') && tempBrown.length === 7 ? tempBrown : '#2D241E'}
-                          onChange={(e) => setTempBrown(e.target.value)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                <div className="grid grid-cols-3 gap-3 mt-4">
+                  {([
+                    { label: 'Marca', value: tempBrown, set: setTempBrown, fallback: '#1C2117' },
+                    { label: 'Acento', value: tempGold, set: setTempGold, fallback: '#C5A059' },
+                    { label: 'Fondo', value: tempBg, set: setTempBg, fallback: '#FAF7F2' },
+                  ] as const).map((c) => (
+                    <div key={c.label} className="space-y-2">
+                      <label className="block text-[9px] font-sans font-bold uppercase tracking-[0.15em] text-[#1C2117]/45">{c.label}</label>
+                      <div className="flex items-center gap-2 bg-[#FDFBF7] border border-[#1C2117]/12 rounded-xl px-2.5 py-2">
+                        <div className="relative w-5 h-5 rounded-full border border-[#1C2117]/15 cursor-pointer shrink-0" style={{ backgroundColor: c.value }}>
+                          <input
+                            type="color"
+                            value={c.value.startsWith('#') && c.value.length === 7 ? c.value : c.fallback}
+                            onChange={(e) => c.set(e.target.value)}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          maxLength={7}
+                          value={c.value}
+                          onChange={(e) => c.set(e.target.value)}
+                          className="w-full bg-transparent text-[11px] font-mono text-[#1C2117] uppercase focus:outline-none min-w-0"
                         />
                       </div>
-                      <input 
-                        type="text" 
-                        maxLength={7}
-                        value={tempBrown}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setTempBrown(val);
-                        }}
-                        className="w-full bg-stone-50 rounded-lg px-1.5 py-1 text-[9px] font-mono text-brand-brown border border-stone-200 uppercase focus:border-brand-gold focus:outline-hidden"
-                      />
                     </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[8px] font-sans font-semibold text-stone-500">Color Acento</label>
-                    <div className="flex items-center gap-1.5">
-                      <div className="relative w-6 h-6 rounded-md border border-stone-300 cursor-pointer shrink-0" style={{ backgroundColor: tempGold }}>
-                        <input 
-                          type="color" 
-                          value={tempGold.startsWith('#') && tempGold.length === 7 ? tempGold : '#C5A059'}
-                          onChange={(e) => setTempGold(e.target.value)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                      </div>
-                      <input 
-                        type="text" 
-                        maxLength={7}
-                        value={tempGold}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setTempGold(val);
-                        }}
-                        className="w-full bg-stone-50 rounded-lg px-1.5 py-1 text-[9px] font-mono text-brand-brown border border-stone-200 uppercase focus:border-brand-gold focus:outline-hidden"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[8px] font-sans font-semibold text-stone-500">Color Fondo</label>
-                    <div className="flex items-center gap-1.5">
-                      <div className="relative w-6 h-6 rounded-md border border-stone-300 cursor-pointer shrink-0" style={{ backgroundColor: tempBg }}>
-                        <input 
-                          type="color" 
-                          value={tempBg.startsWith('#') && tempBg.length === 7 ? tempBg : '#FAF7F2'}
-                          onChange={(e) => setTempBg(e.target.value)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                      </div>
-                      <input 
-                        type="text" 
-                        maxLength={7}
-                        value={tempBg}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setTempBg(val);
-                        }}
-                        className="w-full bg-stone-50 rounded-lg px-1.5 py-1 text-[9px] font-mono text-brand-brown border border-stone-200 uppercase focus:border-brand-gold focus:outline-hidden"
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Logo de la Marca */}
-            <div className="space-y-2.5">
-              <span className="block font-sans text-[8px] font-extrabold uppercase tracking-widest text-[#C5A059]">
-                3. Logo de la Marca (Pantalla de Acceso)
-              </span>
-              <div className="bg-[#FAF7F2]/50 border border-stone-200/60 rounded-xl p-3 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-16 h-16 rounded-xl bg-white border border-stone-200 flex items-center justify-center relative overflow-hidden shrink-0">
+            {/* ── 03 · Brand logo ── */}
+            <section className="pt-12">
+              <div className="flex items-start justify-between gap-4">
+                <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
+                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">03</span>
+                  Logo de la marca
+                </h2>
+                <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[150px] pt-1.5">
+                  Pantalla de acceso y encabezados
+                </p>
+              </div>
+
+              <div className="bg-[#FDFBF7] border border-[#1C2117]/10 rounded-2xl p-5 space-y-4 mt-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 rounded-2xl bg-[#FAF7F2] border border-[#1C2117]/10 flex items-center justify-center relative overflow-hidden shrink-0">
                     {tempLogoUrl ? (
-                      <img src={tempLogoUrl} alt="Logo temporal" className="max-w-[56px] max-h-[56px] object-contain" referrerPolicy="no-referrer" />
+                      <img src={tempLogoUrl} alt="Logo temporal" className="max-w-[64px] max-h-[64px] object-contain" referrerPolicy="no-referrer" />
                     ) : (
-                      <span className="text-2xl text-stone-300">🏢</span>
+                      <span className="font-serif italic text-sm text-[#1C2117]/40">buttery</span>
                     )}
                   </div>
-                  <div className="flex-1 space-y-1.5">
-                    <label 
-                      htmlFor="custom-logo-upload-input" 
-                      className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg font-sans text-[8px] font-bold uppercase tracking-wider cursor-pointer inline-block border border-stone-300"
+                  <div className="flex-1 space-y-2">
+                    <label
+                      htmlFor="custom-logo-upload-input"
+                      className="px-5 py-2.5 bg-[#FDFBF7] border border-[#1C2117]/15 hover:border-[#1C2117]/40 text-[#1C2117] rounded-full font-sans text-[10px] font-bold uppercase tracking-[0.15em] cursor-pointer inline-block transition-colors"
                     >
-                      Sube tu Logo (PNG, JPG, JPEG)
+                      Sube tu logo (PNG, JPG)
                     </label>
-                    <input 
+                    <input
                       id="custom-logo-upload-input"
-                      type="file" 
-                      accept="image/png, image/jpeg, image/jpg" 
+                      type="file"
+                      accept="image/png, image/jpeg, image/jpg"
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
@@ -1203,7 +1155,6 @@ export default function StaffDashboard({
                             if (event.target?.result) {
                               const img = new Image();
                               img.onload = () => {
-                                // Downscale to reasonable dimensions to fit inside DB comfortably (e.g. max width/height 300px)
                                 const maxDim = 300;
                                 let width = img.width;
                                 let height = img.height;
@@ -1236,60 +1187,66 @@ export default function StaffDashboard({
                       }}
                     />
                     {tempLogoUrl && (
-                      <button 
+                      <button
                         onClick={() => setTempLogoUrl('')}
-                        className="block text-[8px] font-semibold text-red-600 hover:underline uppercase tracking-wider cursor-pointer"
+                        className="flex items-center gap-1.5 text-[10px] font-bold text-[#B08D4F] hover:underline uppercase tracking-[0.15em] cursor-pointer"
                       >
-                        Restablecer a logo original
+                        <RotateCcw className="w-3 h-3" /> Restablecer original
                       </button>
                     )}
                   </div>
                 </div>
 
                 {tempLogoUrl && (
-                  <div className="space-y-1.5 pt-2 border-t border-brand-brown/5">
-                    <div className="flex justify-between items-center text-[8px] font-sans font-extrabold uppercase tracking-widest text-stone-500">
-                      <span>Altura del logo: {tempLogoHeight}px</span>
-                      <span className="font-mono text-stone-400">Rango: 30px - 150px</span>
+                  <div className="space-y-2 pt-4 border-t border-[#1C2117]/8">
+                    <div className="flex justify-between items-center text-[9px] font-sans font-bold uppercase tracking-[0.15em] text-[#1C2117]/50">
+                      <span>Altura del logo</span>
+                      <span className="font-mono text-[#1C2117] text-xs">{tempLogoHeight}px</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <input 
-                        type="range" 
-                        min={30} 
-                        max={150} 
-                        value={tempLogoHeight} 
-                        onChange={(e) => setTempLogoHeight(Number(e.target.value))}
-                        className="w-full accent-brand-gold cursor-pointer"
-                      />
+                    <input
+                      type="range"
+                      min={30}
+                      max={150}
+                      value={tempLogoHeight}
+                      onChange={(e) => setTempLogoHeight(Number(e.target.value))}
+                      className="w-full accent-[#2D4A2E] cursor-pointer"
+                    />
+                    <div className="flex justify-between font-mono text-[9px] text-[#1C2117]/35">
+                      <span>30px</span>
+                      <span>150px</span>
                     </div>
                   </div>
                 )}
               </div>
-            </div>
+            </section>
 
-            {/* Imagen de fondo de la Tarjeta de Lealtad */}
-            <div className="space-y-2.5">
-              <span className="block font-sans text-[8px] font-extrabold uppercase tracking-widest text-[#C5A059]">
-                4. Imagen de la Tarjeta de Lealtad
-              </span>
-              <div className="bg-[#FAF7F2]/50 border border-stone-200/60 rounded-xl p-3 space-y-3">
-                {/* Preview */}
-                <div className="w-full h-24 rounded-xl overflow-hidden border border-stone-200 bg-stone-100 relative">
+            {/* ── 04 · Card image ── */}
+            <section className="pt-12">
+              <div className="flex items-start justify-between gap-4">
+                <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
+                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">04</span>
+                  Imagen de la tarjeta
+                </h2>
+                <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[150px] pt-1.5">
+                  Se muestra en la tarjeta digital del socio
+                </p>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                <div className="w-full rounded-2xl overflow-hidden border border-[#1C2117]/10 bg-[#EDE6DA] relative" style={{ aspectRatio: '16/10' }}>
                   <img
-                    src={tempCardBgUrl || 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80'}
+                    src={tempCardBgUrl || butteryStorefront}
                     alt="Vista previa de tarjeta"
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute inset-0 bg-black/20" />
-                  <span className="absolute bottom-2 left-2 font-sans text-[8px] text-white font-bold uppercase tracking-wider bg-black/40 px-2 py-0.5 rounded-full">
+                  <span className="absolute top-3 left-3 font-sans text-[9px] text-white font-bold uppercase tracking-[0.15em] bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full">
                     Vista previa
                   </span>
                 </div>
 
-                {/* URL input */}
-                <div className="space-y-1.5">
-                  <label className="block font-sans text-[8px] font-semibold text-stone-500 uppercase tracking-wider">
+                <div className="space-y-2">
+                  <label className="block font-sans text-[9px] font-bold text-[#1C2117]/45 uppercase tracking-[0.15em]">
                     URL de imagen (https://...)
                   </label>
                   <input
@@ -1298,45 +1255,186 @@ export default function StaffDashboard({
                     value={tempCardBgUrl}
                     onChange={(e) => setTempCardBgUrl(e.target.value)}
                     placeholder="https://ejemplo.com/imagen.jpg"
-                    className="w-full bg-stone-50 rounded-xl px-3 py-2 text-[10px] text-brand-brown outline-none border border-stone-200 focus:border-[#C5A059] placeholder:text-stone-300 font-mono"
+                    className="w-full bg-[#FDFBF7] rounded-xl px-4 py-3 text-sm text-[#1C2117] outline-none border border-[#1C2117]/12 focus:border-[#1C2117] placeholder:text-[#1C2117]/30"
                   />
-                  {tempCardBgUrl && tempCardBgUrl !== 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80' && (
-                    <button
-                      onClick={() => setTempCardBgUrl('https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80')}
-                      className="text-[8px] font-semibold text-red-500 hover:underline uppercase tracking-wider cursor-pointer"
-                    >
-                      Restablecer imagen original
-                    </button>
-                  )}
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Editar PIN de Seguridad */}
-            <div className="space-y-2.5">
-              <label htmlFor="settings-pin-input" className="block font-sans text-[8px] font-extrabold uppercase tracking-widest text-[#C5A059]">
-                5. Código PIN de Configuración (4 dígitos)
-              </label>
+            {/* ── 05 · PIN ── */}
+            <section className="pt-12">
+              <div className="flex items-start justify-between gap-4">
+                <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
+                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">05</span>
+                  PIN de configuración
+                </h2>
+                <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[140px] pt-1.5">
+                  Protege el acceso a esta pantalla
+                </p>
+              </div>
+
               <input
                 id="settings-pin-input"
                 type="text"
+                inputMode="numeric"
                 maxLength={4}
                 value={tempPin}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, '');
                   if (val.length <= 4) setTempPin(val);
                 }}
-                className="w-full bg-stone-50 rounded-xl px-4 py-2 text-xs text-brand-brown outline-hidden border border-stone-200 focus:border-[#C5A059]"
-                placeholder="Introduce 4 dígitos numéricos"
+                className="w-full max-w-[200px] mt-6 bg-[#FDFBF7] rounded-xl px-5 py-3.5 text-lg font-mono tracking-[0.4em] text-[#1C2117] outline-none border border-[#1C2117]/12 focus:border-[#1C2117] text-center"
+                placeholder="0000"
               />
-            </div>
+              <p className="font-sans text-[11px] text-[#1C2117]/40 mt-2">4 dígitos numéricos</p>
+            </section>
 
-            {/* Acciones de Modal */}
-            <div className="flex items-center gap-3 pt-3 border-t border-stone-100">
+            {/* ── 06 · Equipo (staff accounts) ── */}
+            <section className="pt-12">
+              <div className="flex items-start justify-between gap-4">
+                <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
+                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">06</span>
+                  Equipo
+                </h2>
+                <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[150px] pt-1.5">
+                  Cuentas con acceso a la consola staff
+                </p>
+              </div>
+
+              {/* Register new staff form */}
+              <div className="bg-[#FDFBF7] border border-[#1C2117]/10 rounded-2xl p-5 space-y-4 mt-6">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-[#2D4A2E] flex items-center justify-center shrink-0">
+                    <UserPlus className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-sans text-sm font-semibold text-[#1C2117] leading-none">Registrar acceso de staff</p>
+                    <p className="font-sans text-[11px] text-[#1C2117]/45 mt-1 leading-none">Crea una cuenta individual o una compartida para todo el equipo.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  <div className="space-y-1.5">
+                    <label htmlFor="new-staff-name" className="font-sans text-[9px] font-bold uppercase tracking-[0.15em] text-[#1C2117]/45">Nombre o etiqueta</label>
+                    <input
+                      id="new-staff-name"
+                      type="text"
+                      placeholder="Ej. Carlos · Barra, o 'Equipo Polanco'"
+                      value={newStaffName}
+                      onChange={(e) => setNewStaffName(e.target.value)}
+                      className="w-full bg-[#FAF7F2] border border-[#1C2117]/12 rounded-xl py-3 px-4 text-sm text-[#1C2117] placeholder:text-[#1C2117]/35 focus:outline-none focus:border-[#1C2117] transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="new-staff-email" className="font-sans text-[9px] font-bold uppercase tracking-[0.15em] text-[#1C2117]/45">Correo electrónico</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1C2117]/30" />
+                      <input
+                        id="new-staff-email"
+                        type="email"
+                        placeholder="staff@buttery.mx"
+                        value={newStaffEmail}
+                        onChange={(e) => setNewStaffEmail(e.target.value)}
+                        className="w-full bg-[#FAF7F2] border border-[#1C2117]/12 rounded-xl py-3 pl-11 pr-4 text-sm text-[#1C2117] placeholder:text-[#1C2117]/35 focus:outline-none focus:border-[#1C2117] transition-colors"
+                      />
+                    </div>
+                    <p className="font-sans text-[10px] text-[#1C2117]/40">
+                      Para un acceso compartido, usa un solo correo que todo el equipo conozca. Si el correo ya existe, se actualizará su contraseña.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="new-staff-password" className="font-sans text-[9px] font-bold uppercase tracking-[0.15em] text-[#1C2117]/45">Contraseña</label>
+                    <input
+                      id="new-staff-password"
+                      type="text"
+                      placeholder="Mínimo 4 caracteres"
+                      value={newStaffPassword}
+                      onChange={(e) => setNewStaffPassword(e.target.value)}
+                      className="w-full bg-[#FAF7F2] border border-[#1C2117]/12 rounded-xl py-3 px-4 text-sm text-[#1C2117] placeholder:text-[#1C2117]/35 focus:outline-none focus:border-[#1C2117] transition-colors font-mono"
+                    />
+                  </div>
+
+                  {staffFormError && (
+                    <div className="bg-rose-50 border border-rose-200 p-3 rounded-xl text-rose-700 text-xs font-sans">
+                      {staffFormError}
+                    </div>
+                  )}
+                  {staffFormSuccess && (
+                    <div className="bg-[#F6EEDF] border border-[#C5A059]/25 p-3 rounded-xl text-[#8A6D3B] text-xs font-sans flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} />
+                      {staffFormSuccess}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    id="register-staff-btn"
+                    onClick={handleStaffRegisterSubmit}
+                    className="w-full bg-[#2D4A2E] hover:bg-[#243B25] text-[#FAF7F2] py-3.5 rounded-xl font-sans text-[10px] font-bold uppercase tracking-[0.18em] transition-colors cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    Guardar acceso de staff
+                  </button>
+                </div>
+              </div>
+
+              {/* Existing staff list */}
+              {(() => {
+                const staffMembers = registeredUsers.filter(u => u.role === 'staff');
+                return (
+                  <div className="mt-4 space-y-2">
+                    <p className="font-sans text-[9px] font-bold uppercase tracking-[0.15em] text-[#1C2117]/45 px-1">
+                      Cuentas actuales ({staffMembers.length})
+                    </p>
+                    {staffMembers.map((member) => {
+                      const isSelf = member.id === staffUser.id;
+                      return (
+                        <div
+                          key={member.id}
+                          className="bg-[#FDFBF7] border border-[#1C2117]/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-full bg-[#EDE6DA] flex items-center justify-center shrink-0">
+                              <Shield className="w-4 h-4 text-[#1C2117]/55" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-sans text-sm font-semibold text-[#1C2117] truncate flex items-center gap-2">
+                                {member.name}
+                                {isSelf && (
+                                  <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-[#1C2117]/40 bg-[#EDE6DA] px-1.5 py-0.5 rounded-full shrink-0">Tú</span>
+                                )}
+                              </p>
+                              <p className="font-sans text-xs text-[#1C2117]/45 truncate">{member.email}</p>
+                            </div>
+                          </div>
+                          {onRemoveStaff && !isSelf && (
+                            <button
+                              id={`remove-staff-${member.id}`}
+                              onClick={() => onRemoveStaff(member.id)}
+                              className="w-9 h-9 rounded-xl border border-[#1C2117]/12 text-[#1C2117]/40 hover:text-rose-600 hover:border-rose-200 transition-colors flex items-center justify-center cursor-pointer shrink-0"
+                              title="Eliminar acceso"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </section>
+          </div>
+
+          {/* Sticky footer actions */}
+          <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-[#FAF7F2] via-[#FAF7F2] to-transparent pt-10 pb-6 z-10">
+            <div className="max-w-2xl mx-auto px-6 md:px-10 flex items-center gap-3">
               <button
                 id="settings-btn-cancel"
                 onClick={() => setIsSettingsOpen(false)}
-                className="flex-1 py-3 bg-stone-50 hover:bg-[#FAF7F2] text-stone-500 rounded-xl font-sans text-[10px] font-bold uppercase tracking-widest transition-colors cursor-pointer border border-[#2D241E]/5 text-center"
+                className="flex-1 py-4 bg-[#FDFBF7] border border-[#1C2117]/15 hover:border-[#1C2117]/40 text-[#1C2117]/70 rounded-full font-sans text-[11px] font-bold uppercase tracking-[0.2em] transition-colors cursor-pointer text-center"
               >
                 Descartar
               </button>
@@ -1349,16 +1447,15 @@ export default function StaffDashboard({
                   setFeedbackMsg({ text: '¡Configuración de marca actualizada de manera segura!', isError: false });
                   setTimeout(() => setFeedbackMsg(null), 2500);
                 }}
-                className={`flex-1 py-3 text-white rounded-xl font-sans text-[10px] font-bold uppercase tracking-widest transition-colors cursor-pointer text-center ${
+                className={`flex-[1.4] py-4 rounded-full font-sans text-[11px] font-bold uppercase tracking-[0.2em] transition-colors cursor-pointer text-center ${
                   tempPin.length !== 4
-                    ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
-                    : 'bg-brand-brown hover:bg-brand-gold'
+                    ? 'bg-[#EDE6DA] text-[#1C2117]/30 cursor-not-allowed'
+                    : 'bg-[#2D4A2E] hover:bg-[#243B25] text-[#FAF7F2]'
                 }`}
               >
-                Guardar
+                Guardar cambios
               </button>
             </div>
-
           </div>
         </div>
       )}
