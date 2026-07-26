@@ -136,6 +136,7 @@ export default function App() {
           name: p.name,
           email: p.email,
           role: p.role as UserRole,
+          isSupervisor: p.is_supervisor ?? false,
           points: p.points,
           qrCode: p.qr_code,
           createdAt: p.created_at,
@@ -588,9 +589,10 @@ export default function App() {
 
   // Register a new staff member (called from the PIN-gated settings "Equipo" section).
   // Supports both individual accounts and a shared account — the supervisor just
-  // provides a name, email, and password. Returns an error string on failure, or
-  // null on success, so the settings UI can show inline feedback.
-  const handleRegisterStaff = (name: string, email: string, password: string): string | null => {
+  // provides a name, email, password, and whether the account has supervisor rights.
+  // Returns an error string on failure, or null on success, so the settings UI can
+  // show inline feedback.
+  const handleRegisterStaff = (name: string, email: string, password: string, isSupervisor: boolean): string | null => {
     const cleanName = name.trim();
     const emailLower = email.trim().toLowerCase();
 
@@ -605,14 +607,18 @@ export default function App() {
       if (existing.role !== 'staff') {
         return 'Ese correo ya está registrado como socio (cliente).';
       }
-      // Update the shared/existing staff password
+      // Update the shared/existing staff password and supervisor flag
       const updatedUsers = users.map(u =>
-        u.id === existing.id ? { ...u, name: cleanName, password } : u
+        u.id === existing.id ? { ...u, name: cleanName, password, isSupervisor } : u
       );
       setUsers(updatedUsers);
+      // Keep the logged-in session in sync if the supervisor edited their own account
+      if (currentUser && currentUser.id === existing.id) {
+        setCurrentUser({ ...currentUser, name: cleanName, password, isSupervisor });
+      }
 
       if (isSupabaseConfigured && supabase) {
-        supabase.from('profiles').update({ name: cleanName, password }).eq('id', existing.id)
+        supabase.from('profiles').update({ name: cleanName, password, is_supervisor: isSupervisor }).eq('id', existing.id)
           .then(({ error }) => { if (error) console.error('Supabase Error update staff:', error); });
       }
       return null;
@@ -624,6 +630,7 @@ export default function App() {
       name: cleanName,
       email: emailLower,
       role: 'staff',
+      isSupervisor,
       points: 0,
       qrCode: `BUTTERY-STAFF-${Math.floor(1000 + Math.random() * 9000)}`,
       createdAt: new Date().toISOString(),
@@ -638,6 +645,7 @@ export default function App() {
         name: newStaff.name,
         email: newStaff.email,
         role: newStaff.role,
+        is_supervisor: newStaff.isSupervisor,
         points: newStaff.points,
         qr_code: newStaff.qrCode,
         created_at: newStaff.createdAt,
@@ -646,6 +654,19 @@ export default function App() {
     }
 
     return null;
+  };
+
+  // Toggle supervisor rights on an existing staff account (promote / demote).
+  const handleToggleSupervisor = (staffId: string, makeSupervisor: boolean) => {
+    setUsers(prev => prev.map(u => u.id === staffId ? { ...u, isSupervisor: makeSupervisor } : u));
+    // Keep the session in sync if a supervisor changed their own rights.
+    if (currentUser && currentUser.id === staffId) {
+      setCurrentUser({ ...currentUser, isSupervisor: makeSupervisor });
+    }
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('profiles').update({ is_supervisor: makeSupervisor }).eq('id', staffId)
+        .then(({ error }) => { if (error) console.error('Supabase Error toggle supervisor:', error); });
+    }
   };
 
   // Remove a staff member (supervisor action from the "Equipo" section).
@@ -1132,6 +1153,7 @@ export default function App() {
                 onUpdateSettings={handleUpdateSettings}
                 onRegisterStaff={handleRegisterStaff}
                 onRemoveStaff={handleRemoveStaff}
+                onToggleSupervisor={handleToggleSupervisor}
               />
             )
           ) : (
