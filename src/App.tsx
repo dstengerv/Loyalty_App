@@ -138,6 +138,7 @@ export default function App() {
             setLogoUrl(dbSettings.logo_url || '');
             setLogoHeight(dbSettings.logo_height !== undefined && dbSettings.logo_height !== null ? Number(dbSettings.logo_height) : 40);
             setCardBgUrl(dbSettings.card_bg_url || '');
+            setRewardText(dbSettings.reward_text || 'Repostería o café de cortesía');
 
                     localStorage.setItem('buttery_stamp_symbol', dbSettings.stamp_symbol || '🥐');
                     localStorage.setItem('buttery_brand_brown', dbSettings.brand_brown || '#1C2117');
@@ -147,6 +148,7 @@ export default function App() {
             localStorage.setItem('buttery_logo_url', dbSettings.logo_url || '');
             localStorage.setItem('buttery_logo_height', (dbSettings.logo_height !== undefined && dbSettings.logo_height !== null ? dbSettings.logo_height : 40).toString());
             localStorage.setItem('buttery_card_bg_url', dbSettings.card_bg_url || '');
+            localStorage.setItem('buttery_reward_text', dbSettings.reward_text || 'Repostería o café de cortesía');
           }
         } catch (settingsErr) {
           console.warn('Fallback: Could not fetch app_settings table or it is not provisioned yet.', settingsErr);
@@ -267,18 +269,21 @@ export default function App() {
     return saved ? parseInt(saved, 10) : 40;
   });
   const [cardBgUrl, setCardBgUrl] = useState<string>(() => localStorage.getItem('buttery_card_bg_url') || 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80');
+  const [rewardText, setRewardText] = useState<string>(() => localStorage.getItem('buttery_reward_text') || 'Repostería o café de cortesía');
 
-  const handleUpdateSettings = async (stamp: string, newPin: string, logo: string, height: number, newCardBgUrl: string) => {
+  const handleUpdateSettings = async (stamp: string, newPin: string, logo: string, height: number, newCardBgUrl: string, newRewardText: string) => {
     setStampSymbol(stamp);
     setSettingsPin(newPin);
     setLogoUrl(logo);
     setLogoHeight(height);
     setCardBgUrl(newCardBgUrl);
+    setRewardText(newRewardText);
     localStorage.setItem('buttery_stamp_symbol', stamp);
     localStorage.setItem('buttery_settings_pin', newPin);
     localStorage.setItem('buttery_logo_url', logo);
     localStorage.setItem('buttery_logo_height', height.toString());
     localStorage.setItem('buttery_card_bg_url', newCardBgUrl);
+    localStorage.setItem('buttery_reward_text', newRewardText);
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -294,6 +299,7 @@ export default function App() {
             logo_url: logo,
             logo_height: height,
             card_bg_url: newCardBgUrl,
+            reward_text: newRewardText,
             updated_at: new Date().toISOString()
           }, { onConflict: 'id' });
 
@@ -1068,7 +1074,7 @@ export default function App() {
         userName: currentUser.name,
         points: 10,
         type: 'redeem',
-        description: `Canjeó planilla completa: Repostería o café de cortesía`,
+        description: `Canjeó planilla completa: ${rewardText}`,
         timestamp: new Date().toISOString()
       };
       setTransactions(prev => [...prev, newTx]);
@@ -1233,6 +1239,7 @@ export default function App() {
                 onClaimCompletedCard={handleClaimCompletedCard}
                 stampSymbol={stampSymbol}
                 cardBgUrl={cardBgUrl}
+                rewardText={rewardText}
               />
             ) : (
               <StaffDashboard
@@ -1250,6 +1257,7 @@ export default function App() {
                 logoUrl={logoUrl}
                 logoHeight={logoHeight}
                 cardBgUrl={cardBgUrl}
+                rewardText={rewardText}
                 onUpdateSettings={handleUpdateSettings}
                 onRegisterStaff={handleRegisterStaff}
                 onRemoveStaff={handleRemoveStaff}
@@ -1301,7 +1309,7 @@ export default function App() {
                       Tu recompensa
                     </p>
                     <p className="font-serif text-xl text-[#FAF7F2]">
-                      Repostería o café de cortesía
+                      {rewardText}
                     </p>
                     <p className="font-sans text-xs text-[#FAF7F2]/60 mt-1">
                       Al completar 10 sellos
