@@ -41,7 +41,7 @@ interface StaffDashboardProps {
   logoHeight: number;
   cardBgUrl: string;
   onUpdateSettings: (stamp: string, newPin: string, logoUrl: string, logoHeight: number, cardBgUrl: string) => void;
-  onRegisterStaff?: (name: string, email: string, password: string, isSupervisor: boolean) => string | null;
+  onRegisterStaff?: (name: string, email: string, password: string, isSupervisor: boolean) => Promise<string | null>;
   onRemoveStaff?: (staffId: string) => void;
   onToggleSupervisor?: (staffId: string, makeSupervisor: boolean) => void;
 }
@@ -104,11 +104,11 @@ export default function StaffDashboard({
   const [staffFormError, setStaffFormError] = useState<string | null>(null);
   const [staffFormSuccess, setStaffFormSuccess] = useState<string | null>(null);
 
-  const handleStaffRegisterSubmit = () => {
+  const handleStaffRegisterSubmit = async () => {
     setStaffFormError(null);
     setStaffFormSuccess(null);
     if (!onRegisterStaff) return;
-    const err = onRegisterStaff(newStaffName, newStaffEmail, newStaffPassword, newStaffIsSupervisor);
+    const err = await onRegisterStaff(newStaffName, newStaffEmail, newStaffPassword, newStaffIsSupervisor);
     if (err) {
       setStaffFormError(err);
       return;
