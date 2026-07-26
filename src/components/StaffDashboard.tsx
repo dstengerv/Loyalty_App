@@ -41,8 +41,9 @@ interface StaffDashboardProps {
   logoHeight: number;
   cardBgUrl: string;
   onUpdateSettings: (stamp: string, newPin: string, logoUrl: string, logoHeight: number, cardBgUrl: string) => void;
-  onRegisterStaff?: (name: string, email: string, password: string) => string | null;
+  onRegisterStaff?: (name: string, email: string, password: string, isSupervisor: boolean) => string | null;
   onRemoveStaff?: (staffId: string) => void;
+  onToggleSupervisor?: (staffId: string, makeSupervisor: boolean) => void;
 }
 
 // "HACE X DÍAS" helper for last visit labels
@@ -74,6 +75,7 @@ export default function StaffDashboard({
   onUpdateSettings,
   onRegisterStaff,
   onRemoveStaff,
+  onToggleSupervisor,
 }: StaffDashboardProps) {
   // Tabs: 'control' (check-in / scan) and 'users' (CRM list)
   const [activeTab, setActiveTab] = useState<'control' | 'users'>('control');
@@ -89,10 +91,16 @@ export default function StaffDashboard({
   const [tempLogoHeight, setTempLogoHeight] = useState<number>(logoHeight);
   const [tempCardBgUrl, setTempCardBgUrl] = useState<string>(cardBgUrl);
 
+  // Supervisor gate — only supervisors see Configuración and manage staff.
+  // Note: settings itself is still PIN-protected; this simply hides the entry
+  // point for non-supervisor (barista) accounts.
+  const canManage = staffUser.isSupervisor === true;
+
   // Staff registration form state (Equipo section)
   const [newStaffName, setNewStaffName] = useState<string>('');
   const [newStaffEmail, setNewStaffEmail] = useState<string>('');
   const [newStaffPassword, setNewStaffPassword] = useState<string>('');
+  const [newStaffIsSupervisor, setNewStaffIsSupervisor] = useState<boolean>(false);
   const [staffFormError, setStaffFormError] = useState<string | null>(null);
   const [staffFormSuccess, setStaffFormSuccess] = useState<string | null>(null);
 
@@ -100,7 +108,7 @@ export default function StaffDashboard({
     setStaffFormError(null);
     setStaffFormSuccess(null);
     if (!onRegisterStaff) return;
-    const err = onRegisterStaff(newStaffName, newStaffEmail, newStaffPassword);
+    const err = onRegisterStaff(newStaffName, newStaffEmail, newStaffPassword, newStaffIsSupervisor);
     if (err) {
       setStaffFormError(err);
       return;
@@ -109,6 +117,7 @@ export default function StaffDashboard({
     setNewStaffName('');
     setNewStaffEmail('');
     setNewStaffPassword('');
+    setNewStaffIsSupervisor(false);
     setTimeout(() => setStaffFormSuccess(null), 3500);
   };
 
@@ -396,24 +405,26 @@ export default function StaffDashboard({
           <div>
             <p className="font-sans text-[9px] uppercase tracking-[0.25em] text-[#1C2117]/45 font-bold leading-none">Consola Staff</p>
             <h2 className="font-serif font-medium text-[#1C2117] text-xl mt-1 leading-none">
-              {staffUser.name} <span className="text-[#1C2117]/40 font-normal">&middot; Recepción</span>
+              {staffUser.name} <span className="text-[#1C2117]/40 font-normal">&middot; {canManage ? 'Supervisor' : 'Staff'}</span>
             </h2>
           </div>
         </div>
 
         <div className="flex items-center gap-1">
-          <button
-            id="staff-settings-btn"
-            onClick={() => {
-              setIsPinModalOpen(true);
-              setEnteredPin('');
-              setPinError(null);
-            }}
-            className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-[#1C2117]/5 text-[#1C2117]/40 hover:text-[#1C2117] transition-all cursor-pointer"
-            title="Configuración"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
+          {canManage && (
+            <button
+              id="staff-settings-btn"
+              onClick={() => {
+                setIsPinModalOpen(true);
+                setEnteredPin('');
+                setPinError(null);
+              }}
+              className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-[#1C2117]/5 text-[#1C2117]/40 hover:text-[#1C2117] transition-all cursor-pointer"
+              title="Configuración"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          )}
           <button
             id="staff-logout-btn"
             onClick={onLogout}
@@ -1229,6 +1240,26 @@ export default function StaffDashboard({
                     </div>
                   )}
 
+                  {/* Supervisor permission toggle */}
+                  <button
+                    type="button"
+                    id="new-staff-supervisor-toggle"
+                    onClick={() => setNewStaffIsSupervisor(v => !v)}
+                    className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-[#1C2117]/12 bg-[#FAF7F2] hover:border-[#1C2117]/30 transition-colors cursor-pointer text-left"
+                  >
+                    <span className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
+                      newStaffIsSupervisor ? 'bg-[#2D4A2E] border-[#2D4A2E]' : 'bg-[#FDFBF7] border-[#1C2117]/25'
+                    }`}>
+                      {newStaffIsSupervisor && <Check className="w-3.5 h-3.5 text-[#FAF7F2]" strokeWidth={3} />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="font-sans text-sm font-semibold text-[#1C2117] block leading-tight">Acceso de supervisor</span>
+                      <span className="font-sans text-[11px] text-[#1C2117]/50 block leading-snug mt-0.5">
+                        Permite abrir Configuración y administrar al equipo. Sin esto, la cuenta solo escanea y registra sellos.
+                      </span>
+                    </span>
+                  </button>
+
                   <button
                     type="button"
                     id="register-staff-btn"
@@ -1251,14 +1282,17 @@ export default function StaffDashboard({
                     </p>
                     {staffMembers.map((member) => {
                       const isSelf = member.id === staffUser.id;
+                      const memberIsSupervisor = member.isSupervisor === true;
                       return (
                         <div
                           key={member.id}
                           className="bg-[#FDFBF7] border border-[#1C2117]/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-9 h-9 rounded-full bg-[#EDE6DA] flex items-center justify-center shrink-0">
-                              <Shield className="w-4 h-4 text-[#1C2117]/55" />
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                              memberIsSupervisor ? 'bg-[#2D4A2E]' : 'bg-[#EDE6DA]'
+                            }`}>
+                              <Shield className={`w-4 h-4 ${memberIsSupervisor ? 'text-[#FAF7F2]' : 'text-[#1C2117]/55'}`} />
                             </div>
                             <div className="min-w-0">
                               <p className="font-sans text-sm font-semibold text-[#1C2117] truncate flex items-center gap-2">
@@ -1267,19 +1301,41 @@ export default function StaffDashboard({
                                   <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-[#1C2117]/40 bg-[#EDE6DA] px-1.5 py-0.5 rounded-full shrink-0">Tú</span>
                                 )}
                               </p>
-                              <p className="font-sans text-xs text-[#1C2117]/45 truncate">{member.email}</p>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[8px] font-bold uppercase tracking-[0.15em] px-1.5 py-0.5 rounded-full shrink-0 ${
+                                  memberIsSupervisor ? 'bg-[#F6EEDF] text-[#8A6D3B]' : 'bg-[#EDE6DA] text-[#1C2117]/50'
+                                }`}>
+                                  {memberIsSupervisor ? 'Supervisor' : 'Staff'}
+                                </span>
+                                <p className="font-sans text-xs text-[#1C2117]/45 truncate">{member.email}</p>
+                              </div>
                             </div>
                           </div>
-                          {onRemoveStaff && !isSelf && (
-                            <button
-                              id={`remove-staff-${member.id}`}
-                              onClick={() => onRemoveStaff(member.id)}
-                              className="w-9 h-9 rounded-xl border border-[#1C2117]/12 text-[#1C2117]/40 hover:text-rose-600 hover:border-rose-200 transition-colors flex items-center justify-center cursor-pointer shrink-0"
-                              title="Eliminar acceso"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {/* Promote / demote */}
+                            {onToggleSupervisor && !isSelf && (
+                              <button
+                                id={`toggle-supervisor-${member.id}`}
+                                onClick={() => onToggleSupervisor(member.id, !memberIsSupervisor)}
+                                className="px-3 h-9 rounded-xl border border-[#1C2117]/12 text-[#1C2117]/60 hover:text-[#1C2117] hover:border-[#1C2117]/40 transition-colors flex items-center justify-center cursor-pointer font-sans text-[9px] font-bold uppercase tracking-[0.12em]"
+                                title={memberIsSupervisor ? 'Quitar acceso de supervisor' : 'Dar acceso de supervisor'}
+                              >
+                                {memberIsSupervisor ? 'Hacer staff' : 'Hacer super.'}
+                              </button>
+                            )}
+                            {/* Remove */}
+                            {onRemoveStaff && !isSelf && (
+                              <button
+                                id={`remove-staff-${member.id}`}
+                                onClick={() => onRemoveStaff(member.id)}
+                                className="w-9 h-9 rounded-xl border border-[#1C2117]/12 text-[#1C2117]/40 hover:text-rose-600 hover:border-rose-200 transition-colors flex items-center justify-center cursor-pointer shrink-0"
+                                title="Eliminar acceso"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
