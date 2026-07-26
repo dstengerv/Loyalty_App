@@ -87,6 +87,38 @@ export default function App() {
     setUsers(mappedUsers);
   };
 
+  // Re-fetch profiles + transactions + vouchers. Called after login, since the
+  // initial mount fetch runs before the user is authenticated and RLS returns
+  // nothing until a session exists.
+  const refreshAllFromDb = async () => {
+    if (!supabase) return;
+    const [{ data: dbProfiles }, { data: dbTx }, { data: dbVouchers }] = await Promise.all([
+      supabase.from('profiles').select('*'),
+      supabase.from('transactions').select('*'),
+      supabase.from('vouchers').select('*'),
+    ]);
+    if (dbProfiles) {
+      setUsers(dbProfiles.map(p => ({
+        id: p.id, name: p.name, email: p.email, role: p.role as UserRole,
+        isSupervisor: p.is_supervisor ?? false, points: p.points,
+        qrCode: p.qr_code, createdAt: p.created_at,
+      })));
+    }
+    if (dbTx) {
+      setTransactions(dbTx.map(t => ({
+        id: t.id, userId: t.user_id, userName: t.user_name, points: t.points,
+        type: t.type as 'earn' | 'redeem', description: t.description,
+        timestamp: t.timestamp, staffName: t.staff_name,
+      })));
+    }
+    if (dbVouchers) {
+      setVouchers(dbVouchers.map(v => ({
+        code: v.code, points: v.points, description: v.description,
+        isUsed: v.is_used, createdAt: v.created_at,
+      })));
+    }
+  };
+
   // Pull data from Supabase on startup if configured
   useEffect(() => {
     async function loadSupabaseData() {
@@ -256,6 +288,15 @@ export default function App() {
       sub.subscription.unsubscribe();
     };
   }, []);
+
+  // When a user logs in (currentUser becomes set), re-fetch data with the now-
+  // authenticated session. This fixes the staff CRM showing 0 socios until a
+  // manual page refresh — the mount-time fetch ran before auth was ready.
+  useEffect(() => {
+    if (currentUser?.id) {
+      refreshAllFromDb();
+    }
+  }, [currentUser?.id]);
 
   // Dynamic Brand Theme & Config States
   const [stampSymbol, setStampSymbol] = useState<string>(() => localStorage.getItem('buttery_stamp_symbol') || '🥐');
