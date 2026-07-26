@@ -13,6 +13,7 @@ export interface User {
   qrCode: string; // User's unique loyalty scan code
   createdAt: string;
   password?: string;
+  isSupervisor?: boolean; // Staff-only: grants access to Configuración and team management
 }
 
 export interface Transaction {
