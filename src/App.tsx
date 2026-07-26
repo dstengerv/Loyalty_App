@@ -715,7 +715,16 @@ export default function App() {
     // If this email already has a profile, update it (name / supervisor / password).
     const existing = users.find(u => u.email === emailLower);
 
+    // Send the CURRENT USER's access token so the function can verify the
+    // caller is staff (not the anon/service key the client is configured with).
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) {
+      return 'Tu sesión expiró. Vuelve a iniciar sesión e intenta de nuevo.';
+    }
+
     const { data, error } = await supabase.functions.invoke('admin-staff', {
+      headers: { Authorization: `Bearer ${accessToken}` },
       body: {
         action: existing ? 'update' : 'create',
         name: cleanName,
@@ -758,7 +767,11 @@ export default function App() {
     if (currentUser && currentUser.id === staffId) return; // never remove self
     if (!supabase) return;
     setUsers(prev => prev.filter(u => u.id !== staffId));
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (!accessToken) return;
     const { error } = await supabase.functions.invoke('admin-staff', {
+      headers: { Authorization: `Bearer ${accessToken}` },
       body: { action: 'delete', existingId: staffId },
     });
     if (error) console.error('Edge function error deleting staff:', error);
