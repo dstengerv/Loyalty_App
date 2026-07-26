@@ -16,7 +16,7 @@ import StaffDashboard from './components/StaffDashboard';
 import QRCameraScanner from './components/QRCameraScanner';
 import butteryLogoGold from './assets/buttery_logo_gold.png';
 import butteryStorefront from './assets/buttery_storefront.jpg';
-import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { supabase, isSupabaseConfigured, fetchProfile, makeClientQr, makeStaffQr } from './lib/supabase';
 
 
 export default function App() {
@@ -53,10 +53,13 @@ export default function App() {
     return saved ? JSON.parse(saved) : SEED_VOUCHERS;
   });
 
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('buttery_current_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  // currentUser is hydrated from the Supabase session, not localStorage.
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authBusy, setAuthBusy] = useState<boolean>(false);
+  const [sessionChecked, setSessionChecked] = useState<boolean>(false);
+  const [showResetModal, setShowResetModal] = useState<boolean>(
+    () => typeof window !== 'undefined' && window.location.hash.includes('reset')
+  );
 
   // Supabase states
   const [supabaseLoading, setSupabaseLoading] = useState<boolean>(false);
@@ -64,6 +67,25 @@ export default function App() {
   const [supabaseStatus, setSupabaseStatus] = useState<'unconfigured' | 'connecting' | 'success' | 'table_error' | 'error'>(() => {
     return isSupabaseConfigured ? 'connecting' : 'unconfigured';
   });
+
+  // Reusable: pull the profiles list from the DB into state (used after
+  // staff create/delete so the Equipo list reflects changes).
+  const refreshUsersFromDb = async () => {
+    if (!supabase) return;
+    const { data: dbProfiles, error } = await supabase.from('profiles').select('*');
+    if (error || !dbProfiles) return;
+    const mappedUsers: User[] = dbProfiles.map(p => ({
+      id: p.id,
+      name: p.name,
+      email: p.email,
+      role: p.role as UserRole,
+      isSupervisor: p.is_supervisor ?? false,
+      points: p.points,
+      qrCode: p.qr_code,
+      createdAt: p.created_at,
+    }));
+    setUsers(mappedUsers);
+  };
 
   // Pull data from Supabase on startup if configured
   useEffect(() => {
@@ -115,7 +137,7 @@ export default function App() {
             setSettingsPin(dbSettings.settings_pin || '1234');
             setLogoUrl(dbSettings.logo_url || '');
             setLogoHeight(dbSettings.logo_height !== undefined && dbSettings.logo_height !== null ? Number(dbSettings.logo_height) : 40);
-            setCardBgUrl(dbSettings.card_bg_url || 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80');
+            setCardBgUrl(dbSettings.card_bg_url || '');
 
                     localStorage.setItem('buttery_stamp_symbol', dbSettings.stamp_symbol || '🥐');
                     localStorage.setItem('buttery_brand_brown', dbSettings.brand_brown || '#1C2117');
@@ -124,7 +146,7 @@ export default function App() {
             localStorage.setItem('buttery_settings_pin', dbSettings.settings_pin || '1234');
             localStorage.setItem('buttery_logo_url', dbSettings.logo_url || '');
             localStorage.setItem('buttery_logo_height', (dbSettings.logo_height !== undefined && dbSettings.logo_height !== null ? dbSettings.logo_height : 40).toString());
-            localStorage.setItem('buttery_card_bg_url', dbSettings.card_bg_url || 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80');
+            localStorage.setItem('buttery_card_bg_url', dbSettings.card_bg_url || '');
           }
         } catch (settingsErr) {
           console.warn('Fallback: Could not fetch app_settings table or it is not provisioned yet.', settingsErr);
@@ -140,7 +162,6 @@ export default function App() {
           points: p.points,
           qrCode: p.qr_code,
           createdAt: p.created_at,
-          password: p.password || '1234'
         }));
 
         const mappedTxs: Transaction[] = (dbTransactions || []).map(t => ({
@@ -166,16 +187,6 @@ export default function App() {
         setTransactions(mappedTxs);
         setVouchers(mappedVouchers);
         setSupabaseStatus('success');
-
-        // Refresh currently logged in session data
-        const savedCurrentUser = localStorage.getItem('buttery_current_user');
-        if (savedCurrentUser) {
-          const parsedUser = JSON.parse(savedCurrentUser);
-          const freshUser = mappedUsers.find(u => u.id === parsedUser.id);
-          if (freshUser) {
-            setCurrentUser(freshUser);
-          }
-        }
       } catch (err: any) {
         console.error('Error fetching from Supabase:', err);
         setSupabaseError(err.message || 'Error de conexión');
@@ -205,13 +216,44 @@ export default function App() {
     localStorage.setItem('buttery_vouchers', JSON.stringify(vouchers));
   }, [vouchers]);
 
+  // Hydrate the session from Supabase on load, and keep currentUser in sync
+  // with auth state changes (login, logout, token refresh, password recovery).
   useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('buttery_current_user', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('buttery_current_user');
+    if (!supabase) {
+      setSessionChecked(true);
+      return;
     }
-  }, [currentUser]);
+
+    let active = true;
+
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!active) return;
+      if (data.session?.user) {
+        const profile = await fetchProfile(data.session.user.id);
+        if (active && profile) setCurrentUser(profile);
+      }
+      if (active) setSessionChecked(true);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setShowResetModal(true);
+      }
+      if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        return;
+      }
+      if (session?.user) {
+        const profile = await fetchProfile(session.user.id);
+        if (profile) setCurrentUser(profile);
+      }
+    });
+
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   // Dynamic Brand Theme & Config States
   const [stampSymbol, setStampSymbol] = useState<string>(() => localStorage.getItem('buttery_stamp_symbol') || '🥐');
@@ -464,107 +506,169 @@ export default function App() {
   }, [successToast]);
 
   // Login handler
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
-    
+
+    if (!supabase) {
+      setAuthError('La conexión con el servidor no está configurada.');
+      return;
+    }
+
     const userEmail = emailInput.trim().toLowerCase();
-    const found = users.find(u => u.email === userEmail && u.role === loginRole);
-    
-    if (!found) {
-      setAuthError(`No se encontró ningún ${loginRole === 'client' ? 'socio' : 'miembro de staff'} con este correo de prueba.`);
+    setAuthBusy(true);
+
+    // Authenticate against Supabase Auth (passwords are hashed server-side).
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: userEmail,
+      password: passwordInput,
+    });
+
+    if (error || !data.user) {
+      setAuthBusy(false);
+      setAuthError('Correo o contraseña incorrectos. Intenta de nuevo.');
       return;
     }
 
-    // Validate Password
-    const savedPassword = found.password || '1234';
-    if (passwordInput !== savedPassword) {
-      setAuthError("La contraseña ingresada es incorrecta. Por favor, de nuevo.");
+    // Load the profile row for this authenticated user.
+    const profile = await fetchProfile(data.user.id);
+    if (!profile) {
+      setAuthBusy(false);
+      setAuthError('No se encontró el perfil de esta cuenta. Contacta al personal.');
+      await supabase.auth.signOut();
       return;
     }
 
-    // Success Authentication
-    setCurrentUser(found);
-    showToast(`¡Bienvenido de vuelta, ${found.name}!`, 'success');
+    // Enforce that the login tab matches the account type.
+    if (profile.role !== loginRole) {
+      setAuthBusy(false);
+      setAuthError(
+        loginRole === 'staff'
+          ? 'Esta cuenta no tiene acceso de personal.'
+          : 'Usa el acceso de personal para esta cuenta.'
+      );
+      await supabase.auth.signOut();
+      return;
+    }
 
-    // Reset inputs
+    setCurrentUser(profile);
+    setAuthBusy(false);
+    showToast(`¡Bienvenido de vuelta, ${profile.name}!`, 'success');
     setEmailInput('');
     setPasswordInput('');
   };
 
-  // Sign up handler
-  const handleSignUp = (e: React.FormEvent) => {
+  // Set a new password (invoked from the reset modal after the user clicks the
+  // recovery link — Supabase has an active recovery session at that point).
+  const [newPasswordInput, setNewPasswordInput] = useState<string>('');
+  const handleSetNewPassword = async () => {
+    if (!supabase) return;
+    if (newPasswordInput.length < 6) {
+      showToast('La contraseña debe tener al menos 6 caracteres.', 'error');
+      return;
+    }
+    const { error } = await supabase.auth.updateUser({ password: newPasswordInput });
+    if (error) {
+      showToast('No se pudo actualizar la contraseña. Abre de nuevo el enlace del correo.', 'error');
+      return;
+    }
+    setShowResetModal(false);
+    setNewPasswordInput('');
+    if (window.location.hash.includes('reset')) {
+      history.replaceState(null, '', window.location.pathname);
+    }
+    showToast('¡Contraseña actualizada! Ya puedes usarla para iniciar sesión.', 'success');
+  };
+
+  // Send a password-reset email. Requires an SMTP provider in Supabase to
+  // actually deliver at volume; the built-in mailer works for testing.
+  const handleForgotPassword = async () => {
+    setAuthError(null);
+    const userEmail = emailInput.trim().toLowerCase();
+    if (!userEmail || !userEmail.includes('@')) {
+      setAuthError('Escribe tu correo arriba y vuelve a presionar "¿Olvidaste tu contraseña?".');
+      return;
+    }
+    if (!supabase) {
+      setAuthError('La conexión con el servidor no está configurada.');
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
+      redirectTo: `${window.location.origin}${window.location.pathname}#reset`,
+    });
+    if (error) {
+      setAuthError('No se pudo enviar el correo de recuperación. Intenta más tarde.');
+      return;
+    }
+    showToast('Te enviamos un correo para restablecer tu contraseña.', 'success');
+  };
+
+  // Sign up handler — creates a real Supabase Auth user. The DB trigger
+  // (handle_new_user) creates the matching profile row from the metadata.
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
 
     if (!nameInput.trim()) {
-      setAuthError("Por favor, ingresa tu nombre de socio.");
+      setAuthError('Por favor, ingresa tu nombre.');
       return;
     }
     if (!emailInput.trim() || !emailInput.includes('@')) {
-      setAuthError("Por favor, ingresa un correo electrónico válido.");
+      setAuthError('Por favor, ingresa un correo electrónico válido.');
       return;
     }
-    if (passwordInput.length < 4) {
-      setAuthError("Establece una contraseña de al menos 4 caracteres.");
+    if (passwordInput.length < 6) {
+      setAuthError('Establece una contraseña de al menos 6 caracteres.');
       return;
     }
     if (passwordInput !== confirmPasswordInput) {
-      setAuthError("Las contraseñas no coinciden.");
+      setAuthError('Las contraseñas no coinciden.');
+      return;
+    }
+    if (!supabase) {
+      setAuthError('La conexión con el servidor no está configurada.');
       return;
     }
 
     const emailLower = emailInput.trim().toLowerCase();
-    const exists = users.some(u => u.email === emailLower);
-    if (exists) {
-      setAuthError("Este correo electrónico ya está registrado como socio.");
+    const newCode = makeClientQr();
+    setAuthBusy(true);
+
+    const { data, error } = await supabase.auth.signUp({
+      email: emailLower,
+      password: passwordInput,
+      options: {
+        data: {
+          name: nameInput.trim(),
+          role: 'client',
+          is_supervisor: false,
+          points: 1, // welcome stamp
+          qr_code: newCode,
+        },
+      },
+    });
+
+    if (error || !data.user) {
+      setAuthBusy(false);
+      if (error?.message?.toLowerCase().includes('already')) {
+        setAuthError('Este correo ya está registrado. Inicia sesión.');
+      } else {
+        setAuthError(error?.message || 'No se pudo crear la cuenta. Intenta de nuevo.');
+      }
       return;
     }
 
-    const newCode = `BUTTERY-CLIENT-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const newUser: User = {
-      id: `c_${Date.now()}`,
-      name: nameInput.trim(),
-      email: emailLower,
-      role: 'client',
-      points: 1, // 1 welcome stamp!
-      qrCode: newCode,
-      createdAt: new Date().toISOString(),
-      password: passwordInput
-    };
-
-    // Update state
-    setUsers(prev => [...prev, newUser]);
-    
-    // Auto login
-    setCurrentUser(newUser);
-
-    // Welcome Transaction
+    // Record the welcome stamp transaction (profile is created by the trigger).
     const welcomeTx: Transaction = {
       id: `tx_welcome_${Date.now()}`,
-      userId: newUser.id,
-      userName: newUser.name,
+      userId: data.user.id,
+      userName: nameInput.trim(),
       points: 1,
       type: 'earn',
       description: 'Sello de bienvenida · Buttery Polanco',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    setTransactions(prev => [...prev, welcomeTx]);
-
-    // Supabase Sync
     if (isSupabaseConfigured && supabase) {
-      supabase.from('profiles').insert([{
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        points: newUser.points,
-        qr_code: newUser.qrCode,
-        created_at: newUser.createdAt,
-        password: newUser.password
-      }]).then(({ error }) => { if (error) console.error('Supabase Error profile:', error); });
-
       supabase.from('transactions').insert([{
         id: welcomeTx.id,
         user_id: welcomeTx.userId,
@@ -573,13 +677,19 @@ export default function App() {
         type: welcomeTx.type,
         description: welcomeTx.description,
         timestamp: welcomeTx.timestamp,
-        staff_name: welcomeTx.staffName || null
+        staff_name: null,
       }]).then(({ error }) => { if (error) console.error('Supabase Error transaction:', error); });
     }
 
-    showToast(`¡Cuenta creada! ¡Estrenas tu tarjeta con 1 sello de cortesía!`, 'success');
+    // Email confirmation is OFF, so a session exists immediately.
+    const profile = await fetchProfile(data.user.id);
+    if (profile) {
+      setCurrentUser(profile);
+      setTransactions(prev => [...prev, welcomeTx]);
+    }
 
-    // Reset inputs
+    setAuthBusy(false);
+    showToast('¡Cuenta creada! Estrenas tu planilla con 1 sello de cortesía.', 'success');
     setNameInput('');
     setEmailInput('');
     setPasswordInput('');
@@ -587,98 +697,72 @@ export default function App() {
     setIsRegistering(false);
   };
 
-  // Register a new staff member (called from the PIN-gated settings "Equipo" section).
-  // Supports both individual accounts and a shared account — the supervisor just
-  // provides a name, email, password, and whether the account has supervisor rights.
-  // Returns an error string on failure, or null on success, so the settings UI can
-  // show inline feedback.
-  const handleRegisterStaff = (name: string, email: string, password: string, isSupervisor: boolean): string | null => {
+  // Register / update a staff member (from the PIN-gated "Equipo" section).
+  //
+  // Creating an auth user for someone else must NOT disturb the supervisor's
+  // own session, so this calls a Supabase Edge Function ("admin-staff") that
+  // uses the service_role key server-side. See buttery_edge_function.md.
+  // Falls back to a clear message if the function isn't deployed yet.
+  const handleRegisterStaff = async (name: string, email: string, password: string, isSupervisor: boolean): Promise<string | null> => {
     const cleanName = name.trim();
     const emailLower = email.trim().toLowerCase();
 
     if (!cleanName) return 'Ingresa un nombre para el miembro del staff.';
     if (!emailLower || !emailLower.includes('@')) return 'Ingresa un correo electrónico válido.';
-    if (password.length < 4) return 'La contraseña debe tener al menos 4 caracteres.';
+    if (password.length < 6) return 'La contraseña debe tener al menos 6 caracteres.';
+    if (!supabase) return 'La conexión con el servidor no está configurada.';
 
-    // If the email already exists as staff, treat it as updating the shared password
-    // rather than erroring — this makes the "one shared email all use" flow natural.
+    // If this email already has a profile, update it (name / supervisor / password).
     const existing = users.find(u => u.email === emailLower);
-    if (existing) {
-      if (existing.role !== 'staff') {
-        return 'Ese correo ya está registrado como socio (cliente).';
-      }
-      // Update the shared/existing staff password and supervisor flag
-      const updatedUsers = users.map(u =>
-        u.id === existing.id ? { ...u, name: cleanName, password, isSupervisor } : u
-      );
-      setUsers(updatedUsers);
-      // Keep the logged-in session in sync if the supervisor edited their own account
-      if (currentUser && currentUser.id === existing.id) {
-        setCurrentUser({ ...currentUser, name: cleanName, password, isSupervisor });
-      }
 
-      if (isSupabaseConfigured && supabase) {
-        supabase.from('profiles').update({ name: cleanName, password, is_supervisor: isSupervisor }).eq('id', existing.id)
-          .then(({ error }) => { if (error) console.error('Supabase Error update staff:', error); });
-      }
-      return null;
+    const { data, error } = await supabase.functions.invoke('admin-staff', {
+      body: {
+        action: existing ? 'update' : 'create',
+        name: cleanName,
+        email: emailLower,
+        password,
+        isSupervisor,
+        qrCode: existing ? existing.qrCode : makeStaffQr(),
+        existingId: existing?.id ?? null,
+      },
+    });
+
+    if (error) {
+      return 'No se pudo guardar el acceso. ¿Está desplegada la función "admin-staff"? (ver guía)';
+    }
+    if (data?.error) {
+      return data.error as string;
     }
 
-    // Create a brand-new staff account
-    const newStaff: User = {
-      id: `s_${Date.now()}`,
-      name: cleanName,
-      email: emailLower,
-      role: 'staff',
-      isSupervisor,
-      points: 0,
-      qrCode: `BUTTERY-STAFF-${Math.floor(1000 + Math.random() * 9000)}`,
-      createdAt: new Date().toISOString(),
-      password
-    };
-
-    setUsers(prev => [...prev, newStaff]);
-
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('profiles').insert([{
-        id: newStaff.id,
-        name: newStaff.name,
-        email: newStaff.email,
-        role: newStaff.role,
-        is_supervisor: newStaff.isSupervisor,
-        points: newStaff.points,
-        qr_code: newStaff.qrCode,
-        created_at: newStaff.createdAt,
-        password: newStaff.password
-      }]).then(({ error }) => { if (error) console.error('Supabase Error insert staff:', error); });
-    }
-
+    // Refresh the staff list from the DB so the UI reflects the change.
+    await refreshUsersFromDb();
     return null;
   };
 
   // Toggle supervisor rights on an existing staff account (promote / demote).
-  const handleToggleSupervisor = (staffId: string, makeSupervisor: boolean) => {
+  const handleToggleSupervisor = async (staffId: string, makeSupervisor: boolean) => {
+    if (!supabase) return;
     setUsers(prev => prev.map(u => u.id === staffId ? { ...u, isSupervisor: makeSupervisor } : u));
-    // Keep the session in sync if a supervisor changed their own rights.
     if (currentUser && currentUser.id === staffId) {
       setCurrentUser({ ...currentUser, isSupervisor: makeSupervisor });
     }
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('profiles').update({ is_supervisor: makeSupervisor }).eq('id', staffId)
-        .then(({ error }) => { if (error) console.error('Supabase Error toggle supervisor:', error); });
-    }
+    // Profile update is allowed directly under RLS (staff can update profiles).
+    const { error } = await supabase.from('profiles')
+      .update({ is_supervisor: makeSupervisor }).eq('id', staffId);
+    if (error) console.error('Supabase Error toggle supervisor:', error);
   };
 
-  // Remove a staff member (supervisor action from the "Equipo" section).
-  const handleRemoveStaff = (staffId: string) => {
-    // Never allow removing the currently logged-in supervisor.
-    if (currentUser && currentUser.id === staffId) return;
+  // Remove a staff member. Deleting the auth user requires admin rights, so this
+  // also goes through the Edge Function; the profile row cascades on delete.
+  const handleRemoveStaff = async (staffId: string) => {
+    if (currentUser && currentUser.id === staffId) return; // never remove self
+    if (!supabase) return;
     setUsers(prev => prev.filter(u => u.id !== staffId));
-
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('profiles').delete().eq('id', staffId)
-        .then(({ error }) => { if (error) console.error('Supabase Error delete staff:', error); });
-    }
+    const { error } = await supabase.functions.invoke('admin-staff', {
+      body: { action: 'delete', existingId: staffId },
+    });
+    if (error) console.error('Edge function error deleting staff:', error);
+    await refreshUsersFromDb();
   };
 
   // Points Add (for Staff scans)
@@ -938,7 +1022,10 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     setCurrentUser(null);
     setIsRegistering(false);
     if (currentPath.startsWith('/staff')) {
@@ -1307,11 +1394,13 @@ export default function App() {
                           <label htmlFor="login-password" className="font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-[#1C2117]/65">
                             Contraseña
                           </label>
-                          {loginRole === 'client' && (
-                            <span className="font-sans text-xs font-semibold text-[#B08D4F] cursor-pointer hover:underline transition-colors">
-                              ¿Olvidaste tu contraseña?
-                            </span>
-                          )}
+                          <button
+                            type="button"
+                            onClick={handleForgotPassword}
+                            className="font-sans text-xs font-semibold text-[#B08D4F] cursor-pointer hover:underline transition-colors"
+                          >
+                            ¿Olvidaste tu contraseña?
+                          </button>
                         </div>
                         <div className="relative">
                           <input
@@ -1490,6 +1579,35 @@ export default function App() {
                 </div>
               </div>
 
+            </div>
+          )}
+
+          {/* PASSWORD RESET MODAL (shown when the user opens a recovery link) */}
+          {showResetModal && (
+            <div className="fixed inset-0 z-50 bg-[#1C2117]/60 backdrop-blur-sm flex items-center justify-center p-6">
+              <div className="w-full max-w-sm bg-[#FDFBF7] rounded-[2rem] p-7 shadow-2xl space-y-5">
+                <div>
+                  <h3 className="font-serif text-2xl font-medium tracking-tight text-[#1C2117]">Nueva contraseña</h3>
+                  <p className="font-sans text-sm text-[#1C2117]/55 mt-2 leading-relaxed">
+                    Escribe tu nueva contraseña para tu cuenta de Buttery.
+                  </p>
+                </div>
+                <input
+                  id="new-password-input"
+                  type="password"
+                  placeholder="Mínimo 6 caracteres"
+                  value={newPasswordInput}
+                  onChange={(e) => setNewPasswordInput(e.target.value)}
+                  className="w-full bg-white border border-[#1C2117]/12 rounded-2xl py-3.5 px-5 text-sm text-[#1C2117] placeholder:text-[#1C2117]/35 focus:outline-none focus:border-[#C5A059] transition-colors"
+                />
+                <button
+                  id="set-new-password-btn"
+                  onClick={handleSetNewPassword}
+                  className="w-full bg-[#2D4A2E] hover:bg-[#243B25] text-[#FAF7F2] py-4 rounded-2xl font-sans font-bold uppercase tracking-[0.2em] text-xs transition-colors cursor-pointer"
+                >
+                  Guardar contraseña
+                </button>
+              </div>
             </div>
           )}
 
