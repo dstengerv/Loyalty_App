@@ -29,6 +29,7 @@ interface CustomerDashboardProps {
   onClaimCompletedCard?: () => void;
   stampSymbol?: string;
   cardBgUrl?: string;
+  rewardText?: string;
 }
 
 export default function CustomerDashboard({
@@ -42,6 +43,7 @@ export default function CustomerDashboard({
   onClaimCompletedCard,
   stampSymbol,
   cardBgUrl,
+  rewardText = 'Repostería o café de cortesía',
 }: CustomerDashboardProps) {
   const [activeTab, setActiveTab] = useState<'card' | 'history' | 'qr'>('card');
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -196,7 +198,7 @@ export default function CustomerDashboard({
                 </div>
                 <div>
                   <p className="font-sans text-[9px] uppercase tracking-[0.25em] text-[#1C2117]/50 font-bold">Próxima recompensa</p>
-                  <p className="font-serif font-medium text-base text-[#1C2117] mt-1">Repostería o café de cortesía</p>
+                  <p className="font-serif font-medium text-base text-[#1C2117] mt-1">{rewardText}</p>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-[#1C2117]/30 flex-shrink-0" />
@@ -342,7 +344,7 @@ export default function CustomerDashboard({
                 {`¡Felicidades, ${user.name}!`}
               </h3>
               <p className="font-sans text-xs text-[#1C2117]/55 leading-relaxed max-w-xs mt-2">
-                Has reunido tus <strong className="text-[#1C2117]">10 sellos</strong> de visita. Muestra esta pantalla en mostrador de <strong className="text-[#1C2117]">Buttery</strong> para recibir tu repostería o café de cortesía.
+                Has reunido tus <strong className="text-[#1C2117]">10 sellos</strong> de visita. Muestra esta pantalla en mostrador de <strong className="text-[#1C2117]">Buttery</strong> para recibir: {rewardText.toLowerCase()}.
               </p>
             </div>
 
