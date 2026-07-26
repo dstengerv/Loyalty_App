@@ -15,7 +15,6 @@ import {
   Plus,
   History,
   ChevronLeft,
-  Upload,
   RotateCcw,
   UserPlus,
   Trash2,
@@ -926,11 +925,11 @@ export default function StaffDashboard({
                   Imagen del sello (opcional)
                 </span>
                 <div className="flex items-center gap-4 mt-4">
-                  <div className="w-16 h-16 rounded-full bg-[#FDFBF7] border border-[#1C2117]/12 flex items-center justify-center relative overflow-hidden shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-[#2D4A2E] border border-[#1C2117]/12 flex items-center justify-center relative overflow-hidden shrink-0">
                     {tempStamp && (tempStamp.startsWith('data:image/') || tempStamp.startsWith('http')) ? (
-                      <img src={tempStamp} alt="Sello cargado" className="w-12 h-12 object-contain" referrerPolicy="no-referrer" />
+                      <img src={tempStamp} alt="Sello cargado" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
-                      <Upload className="w-5 h-5 text-[#1C2117]/30" />
+                      <Check className="w-6 h-6 text-[#FAF7F2]" strokeWidth={3} />
                     )}
                   </div>
                   <div className="flex-1">
@@ -984,6 +983,16 @@ export default function StaffDashboard({
                         }
                       }}
                     />
+                    {tempStamp && (tempStamp.startsWith('data:image/') || tempStamp.startsWith('http')) && (
+                      <button
+                        type="button"
+                        id="clear-stamp-image-btn"
+                        onClick={() => setTempStamp('')}
+                        className="ml-2 px-4 py-2.5 text-[#B08D4F] hover:text-[#8A6D3B] font-sans text-[10px] font-bold uppercase tracking-[0.15em] cursor-pointer inline-flex items-center gap-1.5 transition-colors"
+                      >
+                        <RotateCcw className="w-3 h-3" /> Usar palomita
+                      </button>
+                    )}
                     <p className="font-sans text-[11px] text-[#1C2117]/45 mt-2">PNG con fondo transparente. Si lo dejas vacío, se usa una palomita.</p>
                   </div>
                 </div>
