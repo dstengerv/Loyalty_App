@@ -40,7 +40,8 @@ interface StaffDashboardProps {
   logoUrl: string;
   logoHeight: number;
   cardBgUrl: string;
-  onUpdateSettings: (stamp: string, newPin: string, logoUrl: string, logoHeight: number, cardBgUrl: string) => void;
+  rewardText: string;
+  onUpdateSettings: (stamp: string, newPin: string, logoUrl: string, logoHeight: number, cardBgUrl: string, rewardText: string) => void;
   onRegisterStaff?: (name: string, email: string, password: string, isSupervisor: boolean) => Promise<string | null>;
   onRemoveStaff?: (staffId: string) => void;
   onToggleSupervisor?: (staffId: string, makeSupervisor: boolean) => void;
@@ -72,6 +73,7 @@ export default function StaffDashboard({
   logoUrl,
   logoHeight,
   cardBgUrl,
+  rewardText,
   onUpdateSettings,
   onRegisterStaff,
   onRemoveStaff,
@@ -90,6 +92,7 @@ export default function StaffDashboard({
   const [tempLogoUrl, setTempLogoUrl] = useState<string>(logoUrl);
   const [tempLogoHeight, setTempLogoHeight] = useState<number>(logoHeight);
   const [tempCardBgUrl, setTempCardBgUrl] = useState<string>(cardBgUrl);
+  const [tempRewardText, setTempRewardText] = useState<string>(rewardText);
 
   // Supervisor gate — only supervisors see Configuración and manage staff.
   // Note: settings itself is still PIN-protected; this simply hides the entry
@@ -140,6 +143,7 @@ export default function StaffDashboard({
         setTempLogoUrl(logoUrl);
         setTempLogoHeight(logoHeight);
         setTempCardBgUrl(cardBgUrl);
+        setTempRewardText(rewardText);
       } else {
         setTimeout(() => {
           setPinError('PIN Incorrecto. Reintente.');
@@ -1133,11 +1137,55 @@ export default function StaffDashboard({
               </div>
             </section>
 
-            {/* ── 04 · PIN ── */}
+            {/* ── 04 · Reward ── */}
             <section className="pt-12">
               <div className="flex items-start justify-between gap-4">
                 <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
                   <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">04</span>
+                  Recompensa
+                </h2>
+                <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[150px] pt-1.5">
+                  Lo que el socio recibe al completar la planilla
+                </p>
+              </div>
+
+              <div className="mt-6 space-y-2">
+                <label htmlFor="reward-text-input" className="block font-sans text-[9px] font-bold uppercase tracking-[0.15em] text-[#1C2117]/45">
+                  Texto de la recompensa
+                </label>
+                <input
+                  id="reward-text-input"
+                  type="text"
+                  maxLength={80}
+                  value={tempRewardText}
+                  onChange={(e) => setTempRewardText(e.target.value)}
+                  placeholder="Ej. Repostería o café de cortesía"
+                  className="w-full bg-[#FDFBF7] rounded-xl px-4 py-3 text-sm text-[#1C2117] outline-none border border-[#1C2117]/12 focus:border-[#1C2117] placeholder:text-[#1C2117]/30"
+                />
+                <p className="font-sans text-[11px] text-[#1C2117]/40">
+                  Aparece en la tarjeta del socio, la pantalla de acceso y al completar los 10 sellos.
+                </p>
+
+                {/* Live preview */}
+                <div className="mt-3 bg-[#FDFBF7] border border-[#1C2117]/10 rounded-2xl p-4 flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-full bg-[#F6EEDF] flex items-center justify-center flex-shrink-0">
+                    <Gift className="w-[18px] h-[18px] text-[#B08D4F]" />
+                  </div>
+                  <div>
+                    <p className="font-sans text-[9px] uppercase tracking-[0.25em] text-[#1C2117]/45 font-bold">Próxima recompensa</p>
+                    <p className="font-serif font-medium text-base text-[#1C2117] mt-1">
+                      {tempRewardText || 'Repostería o café de cortesía'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ── 05 · PIN ── */}
+            <section className="pt-12">
+              <div className="flex items-start justify-between gap-4">
+                <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
+                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">05</span>
                   PIN de configuración
                 </h2>
                 <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[140px] pt-1.5">
@@ -1161,11 +1209,11 @@ export default function StaffDashboard({
               <p className="font-sans text-[11px] text-[#1C2117]/40 mt-2">4 dígitos numéricos</p>
             </section>
 
-            {/* ── 05 · Equipo (staff accounts) ── */}
+            {/* ── 06 · Equipo (staff accounts) ── */}
             <section className="pt-12">
               <div className="flex items-start justify-between gap-4">
                 <h2 className="font-sans text-xl font-semibold tracking-tight text-[#1C2117] flex items-baseline gap-3">
-                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">05</span>
+                  <span className="font-mono text-[11px] font-bold text-[#1C2117]/35 tracking-normal">06</span>
                   Equipo
                 </h2>
                 <p className="font-sans text-[9px] uppercase tracking-[0.18em] text-[#1C2117]/40 font-bold text-right leading-relaxed max-w-[150px] pt-1.5">
@@ -1359,7 +1407,7 @@ export default function StaffDashboard({
                 id="settings-btn-save"
                 disabled={tempPin.length !== 4}
                 onClick={() => {
-                  onUpdateSettings(tempStamp, tempPin, tempLogoUrl, tempLogoHeight, tempCardBgUrl);
+                  onUpdateSettings(tempStamp, tempPin, tempLogoUrl, tempLogoHeight, tempCardBgUrl, tempRewardText);
                   setIsSettingsOpen(false);
                   setFeedbackMsg({ text: '¡Configuración de marca actualizada de manera segura!', isError: false });
                   setTimeout(() => setFeedbackMsg(null), 2500);
