@@ -317,13 +317,13 @@ export default function App() {
 
         if (error) {
           console.error('Error saving settings to Supabase:', error);
-          showToast('Guardado localmente, pero falló en la base de datos', 'error');
+          showToast('No se pudo guardar en la base de datos. Revisa la consola.', 'error');
         } else {
           showToast('¡Configuración sincronizada con la base de datos!', 'success');
         }
       } catch (err) {
         console.error('Database connection exception saving settings:', err);
-        showToast('Guardado localmente, pero falló la sincronización', 'error');
+        showToast('No se pudo guardar. Revisa tu conexión.', 'error');
       }
     } else {
       showToast('¡Configuración de marca aplicada correctamente!', 'success');
