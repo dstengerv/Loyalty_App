@@ -10,7 +10,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { User, Transaction, RewardItem, QRVoucher, UserRole } from './types';
-import { SEED_USERS, SEED_TRANSACTIONS, SEED_VOUCHERS, REWARDS } from './data';
+import { REWARDS } from './data';
 import CustomerDashboard from './components/CustomerDashboard';
 import StaffDashboard from './components/StaffDashboard';
 import QRCameraScanner from './components/QRCameraScanner';
@@ -18,40 +18,28 @@ import butteryLogoGold from './assets/buttery_logo_gold.png';
 import butteryStorefront from './assets/buttery_storefront.jpg';
 import { supabase, isSupabaseConfigured, fetchProfile, makeClientQr, makeStaffQr } from './lib/supabase';
 
+// Shared brand logo — Buttery gold script wordmark.
+// Defined at module level (NOT inside App) so its component identity is stable
+// across renders. If it were defined inside App, every keystroke would remount
+// the <img> and make the logo visibly blink.
+const BrandLogo = () => (
+  <img
+    src={butteryLogoGold}
+    alt="Buttery"
+    className="h-14 md:h-16 w-auto object-contain select-none"
+    draggable={false}
+  />
+);
+
 
 export default function App() {
-  // Application Data States
-  const [users, setUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem('buttery_users');
-    const parsed: User[] = saved ? JSON.parse(saved) : SEED_USERS;
-    return parsed.map(u => u.role === 'client' && u.points > 10 ? { ...u, points: 10 } : u);
-  });
-
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem('buttery_transactions');
-    const parsed: Transaction[] = saved ? JSON.parse(saved) : SEED_TRANSACTIONS;
-    return parsed.map(t => {
-      if (t.points > 10) {
-        return {
-          ...t,
-          points: t.type === 'earn' ? 1 : 10,
-          description: t.description
-            .replace(/\+50\s*sellos|\+120\s*sellos/gi, '+1 sello')
-            .replace(/-80\s*sellos|-50\s*sellos/gi, '-10 sellos')
-            .replace('Canjeó recompensa: Café de Especialidad Gratis', 'Canjeó cortesía registrada por staff en mostrador')
-            .replace('Canje: Café de Especialidad Gratis', 'Canjeó cortesía registrada por staff en mostrador')
-            .replace('Desayuno Buttery Signature - Polanco CDMX', 'Consumo en barra - Sello de visita')
-            .replace('Consumo ticket #4392 - Barra Especial Polanco', 'Consumo en barra - Sello de visita')
-        };
-      }
-      return t;
-    });
-  });
-
-  const [vouchers, setVouchers] = useState<QRVoucher[]>(() => {
-    const saved = localStorage.getItem('buttery_vouchers');
-    return saved ? JSON.parse(saved) : SEED_VOUCHERS;
-  });
+  // Application Data States.
+  // Loaded from Supabase on startup (see loadSupabaseData) and refreshed after
+  // login. We do NOT read from localStorage or seed data, so all devices share
+  // the same live data from the database.
+  const [users, setUsers] = useState<User[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [vouchers, setVouchers] = useState<QRVoucher[]>([]);
 
   // currentUser is hydrated from the Supabase session, not localStorage.
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -171,16 +159,6 @@ export default function App() {
             setLogoHeight(dbSettings.logo_height !== undefined && dbSettings.logo_height !== null ? Number(dbSettings.logo_height) : 40);
             setCardBgUrl(dbSettings.card_bg_url || '');
             setRewardText(dbSettings.reward_text || 'Repostería o café de cortesía');
-
-                    localStorage.setItem('buttery_stamp_symbol', dbSettings.stamp_symbol || '🥐');
-                    localStorage.setItem('buttery_brand_brown', dbSettings.brand_brown || '#1C2117');
-                    localStorage.setItem('buttery_brand_gold', dbSettings.brand_gold || '#C5A059');
-                    localStorage.setItem('buttery_brand_bg', dbSettings.brand_bg || '#FAF7F2');
-            localStorage.setItem('buttery_settings_pin', dbSettings.settings_pin || '1234');
-            localStorage.setItem('buttery_logo_url', dbSettings.logo_url || '');
-            localStorage.setItem('buttery_logo_height', (dbSettings.logo_height !== undefined && dbSettings.logo_height !== null ? dbSettings.logo_height : 40).toString());
-            localStorage.setItem('buttery_card_bg_url', dbSettings.card_bg_url || '');
-            localStorage.setItem('buttery_reward_text', dbSettings.reward_text || 'Repostería o café de cortesía');
           }
         } catch (settingsErr) {
           console.warn('Fallback: Could not fetch app_settings table or it is not provisioned yet.', settingsErr);
@@ -237,18 +215,17 @@ export default function App() {
     loadSupabaseData();
   }, []);
 
-  // Sync state to LocalStorage
+  // One-time cleanup: remove legacy localStorage keys from the old
+  // localStorage-based version, so nothing stale lingers on returning devices.
   useEffect(() => {
-    localStorage.setItem('buttery_users', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    localStorage.setItem('buttery_transactions', JSON.stringify(transactions));
-  }, [transactions]);
-
-  useEffect(() => {
-    localStorage.setItem('buttery_vouchers', JSON.stringify(vouchers));
-  }, [vouchers]);
+    try {
+      ['buttery_users', 'buttery_transactions', 'buttery_vouchers',
+       'buttery_current_user', 'buttery_stamp_symbol', 'buttery_brand_brown',
+       'buttery_brand_gold', 'buttery_brand_bg', 'buttery_settings_pin',
+       'buttery_logo_url', 'buttery_logo_height', 'buttery_card_bg_url',
+       'buttery_reward_text'].forEach(k => localStorage.removeItem(k));
+    } catch { /* ignore */ }
+  }, []);
 
   // Hydrate the session from Supabase on load, and keep currentUser in sync
   // with auth state changes (login, logout, token refresh, password recovery).
@@ -298,19 +275,19 @@ export default function App() {
     }
   }, [currentUser?.id]);
 
-  // Dynamic Brand Theme & Config States
-  const [stampSymbol, setStampSymbol] = useState<string>(() => localStorage.getItem('buttery_stamp_symbol') || '🥐');
-  const [brandBrown, setBrandBrown] = useState<string>(() => localStorage.getItem('buttery_brand_brown') || '#1C2117');
-  const [brandGold, setBrandGold] = useState<string>(() => localStorage.getItem('buttery_brand_gold') || '#C5A059');
-  const [brandBg, setBrandBg] = useState<string>(() => localStorage.getItem('buttery_brand_bg') || '#FAF7F2');
-  const [settingsPin, setSettingsPin] = useState<string>(() => localStorage.getItem('buttery_settings_pin') || '1234');
-  const [logoUrl, setLogoUrl] = useState<string>(() => localStorage.getItem('buttery_logo_url') || '');
-  const [logoHeight, setLogoHeight] = useState<number>(() => {
-    const saved = localStorage.getItem('buttery_logo_height');
-    return saved ? parseInt(saved, 10) : 40;
-  });
-  const [cardBgUrl, setCardBgUrl] = useState<string>(() => localStorage.getItem('buttery_card_bg_url') || 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=800&q=80');
-  const [rewardText, setRewardText] = useState<string>(() => localStorage.getItem('buttery_reward_text') || 'Repostería o café de cortesía');
+  // Dynamic Brand Theme & Config States.
+  // These initialize to defaults and are ALWAYS overwritten by the database on
+  // load (see loadSupabaseData). We deliberately do NOT read from localStorage,
+  // so every device shows the same settings — the DB is the single source of truth.
+  const [stampSymbol, setStampSymbol] = useState<string>('🥐');
+  const [brandBrown, setBrandBrown] = useState<string>('#1C2117');
+  const [brandGold, setBrandGold] = useState<string>('#C5A059');
+  const [brandBg, setBrandBg] = useState<string>('#FAF7F2');
+  const [settingsPin, setSettingsPin] = useState<string>('1234');
+  const [logoUrl, setLogoUrl] = useState<string>('');
+  const [logoHeight, setLogoHeight] = useState<number>(40);
+  const [cardBgUrl, setCardBgUrl] = useState<string>('');
+  const [rewardText, setRewardText] = useState<string>('Repostería o café de cortesía');
 
   const handleUpdateSettings = async (stamp: string, newPin: string, logo: string, height: number, newCardBgUrl: string, newRewardText: string) => {
     setStampSymbol(stamp);
@@ -319,12 +296,6 @@ export default function App() {
     setLogoHeight(height);
     setCardBgUrl(newCardBgUrl);
     setRewardText(newRewardText);
-    localStorage.setItem('buttery_stamp_symbol', stamp);
-    localStorage.setItem('buttery_settings_pin', newPin);
-    localStorage.setItem('buttery_logo_url', logo);
-    localStorage.setItem('buttery_logo_height', height.toString());
-    localStorage.setItem('buttery_card_bg_url', newCardBgUrl);
-    localStorage.setItem('buttery_reward_text', newRewardText);
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -1209,18 +1180,6 @@ export default function App() {
     .map(u => ({ name: u.name, qrCode: u.qrCode, points: Math.min(10, u.points) }));
 
   const activeVouchers = vouchers.filter(v => !v.isUsed);
-
-  // Shared brand logo — Buttery gold script wordmark.
-  // Transparent PNG, so it sits on the cream form panel and the photo hero alike.
-  // Place the file at src/assets/buttery_logo_gold.png
-  const BrandLogo = () => (
-    <img
-      src={butteryLogoGold}
-      alt="Buttery"
-      className="h-14 md:h-16 w-auto object-contain select-none"
-      draggable={false}
-    />
-  );
 
   return (
       <div className={`font-sans selection:bg-[#EDE6DA] selection:text-[#1C2117] min-h-screen flex flex-col ${
